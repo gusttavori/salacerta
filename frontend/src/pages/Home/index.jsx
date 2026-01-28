@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   Check,
@@ -12,6 +12,7 @@ import styles from "./Home.module.css";
 
 import logoSalaCerta from "../../assets/sc.png";
 import logoFlxche from "../../assets/flxche.png";
+import { itemRepository } from "../../Repositories/steps";
 
 const MOCK_FACULDADES = [
   { id: "unex", nome: "UNEX", temMapa: true },
@@ -32,29 +33,26 @@ const MOCK_PONTOS_DESTINO = [
 
 export function Home() {
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
   const [faculdadeSel, setFaculdadeSel] = useState(null);
-  const [origemSel, setOrigemSel] = useState(null);
+  // const [origemSel, setOrigemSel] = useState(null);
   const [destinoSel, setDestinoSel] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showToast, setShowToast] = useState(false);
+  // const [text, setText] = useState("");
 
   useEffect(() => {
-    if (location.state?.keepSelection) {
-      const previousDestinationId = "sala101";
-      const previousDestination = MOCK_PONTOS_DESTINO.find(
-        (p) => p.id === previousDestinationId
-      );
-
-      if (previousDestination) {
-        setFaculdadeSel(MOCK_FACULDADES.find((f) => f.id === "unex"));
-        setDestinoSel(previousDestination);
-        setOrigemSel(null);
+    async function carregarDados() {
+      try {
+        const dados = await itemRepository.listarTodos();
+        console.log(dados || []);
+      } catch (error) {
+        console.error(error);
       }
-
-      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate]);
+
+    carregarDados();
+  }, []);
 
   function toggleDropdown(nome) {
     setActiveDropdown((prev) => (prev === nome ? null : nome));
@@ -67,7 +65,7 @@ export function Home() {
 
   function handleSelectFaculdade(item) {
     setFaculdadeSel(item);
-    setOrigemSel(null);
+    // setOrigemSel(null);
     setDestinoSel(null);
     setActiveDropdown(null);
 
@@ -77,11 +75,8 @@ export function Home() {
   }
 
   function handleLocalizar() {
-    console.log("teste");
-    if (faculdadeSel && faculdadeSel.temMapa && origemSel && destinoSel) {
-      navigate(
-        `/rota/calcular?origem=${origemSel.id}&destino=${destinoSel.id}`
-      );
+    if (faculdadeSel && faculdadeSel.temMapa && destinoSel) {
+      console.log(destinoSel);
     } else if (faculdadeSel && !faculdadeSel.temMapa) {
       triggerToast();
     }
@@ -93,8 +88,12 @@ export function Home() {
       ? "Mapa Indisponível"
       : "Localizar Sala";
 
-  const isButtonDisabled =
-    !faculdadeSel || (faculdadeSel.temMapa && (!origemSel || !destinoSel));
+  // const isButtonDisabled =
+  //   !faculdadeSel || (faculdadeSel.temMapa && (!origemSel || !destinoSel));
+
+  const handleSearch = (event) => {
+    setDestinoSel(event.target.value);
+  };
 
   return (
     <div className={styles.container}>
@@ -209,54 +208,20 @@ export function Home() {
                 onClick={() => toggleDropdown("destino")}
                 aria-expanded={activeDropdown === "destino"}
               >
-                <div className={styles.triggerContent}>
-                  <Footprints size={20} color="#000" />
-                  <span
-                    className={
-                      destinoSel ? styles.textoSelecionado : styles.textoTrigger
-                    }
-                  >
-                    {destinoSel ? destinoSel.nome : "Para qual sala irá?"}
-                  </span>
-                </div>
-                <ChevronDown
-                  size={20}
-                  className={`${styles.chevron} ${
-                    activeDropdown === "destino" ? styles.rotate : ""
-                  }`}
+                <Footprints size={20} color="#000" />
+                <input
+                  className={styles.inputDestino}
+                  type="text"
+                  placeholder="Qual sala você procura?"
+                  onChange={(event) => handleSearch(event)}
                 />
               </div>
-              {activeDropdown === "destino" && (
-                <div className={styles.dropdownLista} role="listbox">
-                  {MOCK_PONTOS_DESTINO.map((item) => (
-                    <div
-                      key={item.id}
-                      className={styles.dropdownItem}
-                      onClick={() => {
-                        setDestinoSel(item);
-                        setActiveDropdown(null);
-                      }}
-                      role="option"
-                      aria-selected={destinoSel?.id === item.id}
-                    >
-                      {item.nome}
-                      {destinoSel?.id === item.id && (
-                        <Check size={16} color="#FFB300" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </>
         )}
       </div>
 
-      <button
-        className={styles.btnLocalizar}
-        onClick={handleLocalizar}
-        disabled={isButtonDisabled}
-      >
+      <button className={styles.btnLocalizar} onClick={handleLocalizar}>
         {textoBotao}
       </button>
 
