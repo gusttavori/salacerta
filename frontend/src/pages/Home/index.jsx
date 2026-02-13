@@ -172,7 +172,6 @@ export function Home() {
       <button className={styles.btnLocalizar} onClick={handleLocalizar}>
         {textoBotao}
       </button>
-
       <img src={logoFlxche} alt="Flxche" className={styles.footerLogo} />
     </div>
   );

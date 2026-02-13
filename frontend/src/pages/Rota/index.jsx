@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Star } from "lucide-react";
 import styles from "./Rota.module.css";
 
 import logoSalaCerta from "../../assets/sc1.png";
@@ -9,6 +9,8 @@ import { steps } from "../../Repositories/steps";
 import { rotas } from "../../Repositories/rotas";
 import Loading from "../../components/Loading";
 import RouteNotFound from "../../components/RouteNotFound";
+import { StatusModal } from "../../components/StatusModal";
+import { reviews } from "../../Repositories/reviews";
 
 export function Rota() {
   const navigate = useNavigate();
@@ -16,12 +18,16 @@ export function Rota() {
 
   const [passoAtual, setPassoAtual] = useState(0);
   const [showChegouAlert, setShowChegouAlert] = useState(false);
-  const [showSalvarAlert, setShowSalvarAlert] = useState(false);
+  const [foundRoom, setFoundRoom] = useState("não");
   const [stepsRoute, setStepsRoute] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [routeExisting, setRouteExisting] = useState(true);
-
-  const isAuthenticated = localStorage.getItem("usuario_logado") === "true";
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comentario, setComentario] = useState("");
+  const [hover, setHover] = useState(0);
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const totalPassos = stepsRoute.length;
   const isUltimoPasso = passoAtual === totalPassos - 1;
@@ -50,29 +56,15 @@ export function Rota() {
 
   function handleChegouSim() {
     setShowChegouAlert(false);
-
-    if (isAuthenticated) {
-      // alert(`Destino (${DESTINO_ID}) salvo com sucesso nos favoritos!`);
-      navigate("/favoritos");
-    } else {
-      setShowSalvarAlert(true);
-    }
+    setShowFeedbackModal(true);
+    setFoundRoom("sim");
   }
 
   function handleChegouNao() {
     setShowChegouAlert(false);
-    navigate("/busca", {
-      // state: { keepSelection: true, destinationId: DESTINO_ID },
-    });
-  }
-
-  function handleSalvarSim() {
-    setShowSalvarAlert(false);
-    navigate("/cadastro");
-  }
-
-  function handleSalvarNao() {
-    setShowSalvarAlert(false);
+    setFoundRoom("nao");
+    setShowFeedbackModal(true);
+    navigate("/busca");
   }
 
   function handleProximo() {
@@ -91,6 +83,27 @@ export function Rota() {
   function handleVoltar() {
     navigate(-1);
   }
+
+  async function handleEnviarFeedback() {
+    setRequestStatus("loading");
+    const data = await reviews.addNewReview({
+      feedback: comentario,
+      stars: rating,
+      foundTheRoom: foundRoom,
+    });
+
+    if (!data) {
+      setStatusMessage("Ocorreu um erro inesperado!");
+      setRequestStatus("error");
+      return;
+    }
+    setRequestStatus("success");
+    setShowFeedbackModal(false);
+    navigate("/busca");
+  }
+  const handleCloseStatus = () => {
+    setRequestStatus(null);
+  };
 
   return (
     <>
@@ -126,33 +139,58 @@ export function Rota() {
                   </div>
                 </div>
               )}
-
-              {showSalvarAlert && (
+              {showFeedbackModal && (
                 <div className={styles.overlay}>
                   <div className={styles.modal}>
                     <h2 className={styles.modalTitulo}>
-                      Deseja salvar esta sala como favorita?
+                      Como foi sua experiência?
                     </h2>
+
+                    <div className={styles.estrelasContainer}>
+                      {[1, 2, 3, 4, 5].map((estrela) => (
+                        <button
+                          key={estrela}
+                          type="button"
+                          className={styles.btnEstrela}
+                          onClick={() => setRating(estrela)}
+                          onMouseEnter={() => setHover(estrela)}
+                          onMouseLeave={() => setHover(0)}
+                        >
+                          <Star
+                            size={32}
+                            fill={
+                              (hover || rating) >= estrela ? "#FFB300" : "none"
+                            }
+                            color={
+                              (hover || rating) >= estrela
+                                ? "#FFB300"
+                                : "#D9D9D9"
+                            }
+                          />
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      className={styles.feedbackInput}
+                      placeholder="Diga o que achou do sistema..."
+                      value={comentario}
+                      onChange={(e) => setComentario(e.target.value)}
+                    />
 
                     <div className={styles.modalBotoes}>
                       <button
                         className={`${styles.btnModal} ${styles.btnAmarelo}`}
-                        onClick={handleSalvarSim}
+                        onClick={handleEnviarFeedback}
+                        disabled={rating === 0} // Só habilita se der nota
+                        style={{
+                          opacity: rating === 0 ? 0.5 : 1,
+                          width: "100%",
+                        }}
                       >
-                        Sim
-                      </button>
-                      <button
-                        className={`${styles.btnModal} ${styles.btnPreto}`}
-                        onClick={handleSalvarNao}
-                      >
-                        Não
+                        Enviar e Finalizar
                       </button>
                     </div>
-
-                    <p className={styles.modalSubtitulo}>
-                      Ao salvar como favorito, você pode acessar o trajeto
-                      novamente pelo seu perfil.
-                    </p>
                   </div>
                 </div>
               )}
@@ -172,14 +210,6 @@ export function Rota() {
                   alt="Logo Sala Certa"
                   className={styles.headerLogo}
                 />
-
-                <button
-                  onClick={() => navigate("/favoritos")}
-                  className={styles.btnPerfil}
-                  aria-label="Ir para Favoritos"
-                >
-                  <User size={24} />
-                </button>
               </div>
 
               <div className={styles.cardContainer}>
@@ -235,6 +265,13 @@ export function Rota() {
             </div>
           )}
         </>
+      )}
+      {requestStatus && (
+        <StatusModal
+          status={requestStatus}
+          message={statusMessage}
+          onClose={handleCloseStatus}
+        />
       )}
     </>
   );
