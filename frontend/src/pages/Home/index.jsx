@@ -19,14 +19,22 @@ import { RouteViewer } from "../../components/location/RouteViewer";
 
 export function Home() {
   const [faculdadeSel, setFaculdadeSel] = useState(null);
+  
+  // Agora guardam apenas o NOME (texto) selecionado
   const [origemSel, setOrigemSel] = useState(null);
   const [destinoSel, setDestinoSel] = useState(null);
+  
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const { faculdadesList, loading: loadingFaculdades } = useFaculdades();
   const { origens, destinos, loading: loadingPoints, error: pointsError } = useReferencePoints();
   
   const { route, stepsRoute, loading: loadingRoute, error: routeError, fetchRoute, clearRoute } = useRoute();
+
+  // MÁGICA: Filtra os arrays para remover nomes duplicados.
+  // Garante que "Portaria" apareça apenas 1x no dropdown para o aluno.
+  const origensUnicas = Array.from(new Set(origens.map(p => p.name))).filter(Boolean);
+  const destinosUnicos = Array.from(new Set(destinos.map(p => p.name))).filter(Boolean);
 
   function toggleDropdown(nome) {
     setActiveDropdown((prev) => (prev === nome ? null : nome));
@@ -40,23 +48,23 @@ export function Home() {
     clearRoute();
   }
 
-  function handleSelectOrigem(item) {
-    setOrigemSel(item);
+  function handleSelectOrigem(nome) {
+    setOrigemSel(nome);
     setDestinoSel(null);
     setActiveDropdown(null);
     clearRoute();
   }
 
-  function handleSelectDestino(item) {
-    setDestinoSel(item);
+  function handleSelectDestino(nome) {
+    setDestinoSel(nome);
     setActiveDropdown(null);
     clearRoute();
   }
 
   async function handleLocalizar() {
-
     if (faculdadeSel && origemSel && destinoSel) {
-      fetchRoute(faculdadeSel.id, origemSel.id, destinoSel.id);
+      // Agora envia o NOME da origem e do destino para a busca
+      fetchRoute(faculdadeSel.id, origemSel, destinoSel);
     }
   }
 
@@ -85,6 +93,7 @@ export function Home() {
 
       <div className={styles.formContainer}>
         
+        {/* DROPDOWN FACULDADE */}
         <div className={styles.dropdownContainer}>
           <div
             className={`${styles.dropdownTrigger} ${activeDropdown === "faculdade" ? styles.active : ""}`}
@@ -115,6 +124,7 @@ export function Home() {
           )}
         </div>
 
+        {/* DROPDOWN ORIGEM */}
         {faculdadeSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
@@ -124,7 +134,7 @@ export function Home() {
               <div className={styles.triggerContent} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <MapPin size={20} color={origemSel ? "#000" : "#666"} />
                 {origemSel ? (
-                  <span className={styles.textoSelecionado}>{origemSel.name}</span>
+                  <span className={styles.textoSelecionado}>{origemSel}</span>
                 ) : (
                   <span className={styles.textoTrigger}>
                     {loadingPoints ? "Carregando locais..." : "Onde você está?"}
@@ -136,11 +146,12 @@ export function Home() {
 
             {activeDropdown === "origem" && !loadingPoints && (
               <div className={styles.dropdownLista} role="listbox">
-                {origens.length === 0 && <div className={styles.dropdownItem}>Nenhuma origem cadastrada</div>}
-                {origens.map((item) => (
-                  <div key={item.id} className={styles.dropdownItem} onClick={() => handleSelectOrigem(item)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{item.name}</div>
-                    {origemSel?.id === item.id && <Check size={16} color="#FFB300" />}
+                {origensUnicas.length === 0 && <div className={styles.dropdownItem}>Nenhuma origem cadastrada</div>}
+                
+                {origensUnicas.map((nome, index) => (
+                  <div key={index} className={styles.dropdownItem} onClick={() => handleSelectOrigem(nome)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{nome}</div>
+                    {origemSel === nome && <Check size={16} color="#FFB300" />}
                   </div>
                 ))}
               </div>
@@ -148,6 +159,7 @@ export function Home() {
           </div>
         )}
 
+        {/* DROPDOWN DESTINO */}
         {origemSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
@@ -157,7 +169,7 @@ export function Home() {
               <div className={styles.triggerContent} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Footprints size={20} color={destinoSel ? "#000" : "#666"} />
                 {destinoSel ? (
-                  <span className={styles.textoSelecionado}>{destinoSel.name}</span>
+                  <span className={styles.textoSelecionado}>{destinoSel}</span>
                 ) : (
                   <span className={styles.textoTrigger}>Para onde quer ir?</span>
                 )}
@@ -167,11 +179,12 @@ export function Home() {
 
             {activeDropdown === "destino" && (
               <div className={styles.dropdownLista} role="listbox">
-                {destinos.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
-                {destinos.map((item) => (
-                  <div key={item.id} className={styles.dropdownItem} onClick={() => handleSelectDestino(item)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{item.name}</div>
-                    {destinoSel?.id === item.id && <Check size={16} color="#FFB300" />}
+                {destinosUnicos.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
+                
+                {destinosUnicos.map((nome, index) => (
+                  <div key={index} className={styles.dropdownItem} onClick={() => handleSelectDestino(nome)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{nome}</div>
+                    {destinoSel === nome && <Check size={16} color="#FFB300" />}
                   </div>
                 ))}
               </div>

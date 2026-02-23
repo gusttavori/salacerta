@@ -15,8 +15,10 @@ const Admin = () => {
 
   const [routeName, setRouteName] = useState("");
   const [faculdadeId, setFaculdadeId] = useState("");
-  const [origemId, setOrigemId] = useState("");
-  const [destinoId, setDestinoId] = useState("");
+  
+  // Alterado para guardar o NOME do local (ex: "Portaria") em vez do ID numérico
+  const [origemNome, setOrigemNome] = useState("");
+  const [destinoNome, setDestinoNome] = useState("");
 
   const [stepsList, setStepsList] = useState<StepWithId[]>([]);
   const [creatingStep, setCreatingStep] = useState(false);
@@ -46,6 +48,11 @@ const Admin = () => {
     deleteRoute,
     getStepsByIds
   } = useAdminRoute();
+
+  // MÁGICA: Filtra os arrays para remover nomes duplicados.
+  // Garante que "Portaria" apareça apenas 1x no dropdown.
+  const origensUnicas = Array.from(new Set(origens.map(p => p.name))).filter(Boolean) as string[];
+  const destinosUnicos = Array.from(new Set(destinos.map(p => p.name))).filter(Boolean) as string[];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -91,9 +98,9 @@ const Admin = () => {
         await fetchPoints(); 
         
         if (formData.is_origem) {
-          setOrigemId(newStep.id); 
+          setOrigemNome(formData.name); // Salva o nome
         } else {
-          setDestinoId(newStep.id); 
+          setDestinoNome(formData.name); // Salva o nome
         }
       }
 
@@ -112,13 +119,13 @@ const Admin = () => {
     setEditingRouteId(null);
     setRouteName("");
     setFaculdadeId("");
-    setOrigemId("");
-    setDestinoId("");
+    setOrigemNome("");
+    setDestinoNome("");
     setStepsList([]);
   };
 
   const handleSaveRoute = async () => {
-    if (!faculdadeId || !origemId || !destinoId) {
+    if (!faculdadeId || !origemNome || !destinoNome) {
       alert("Selecione a Faculdade, Origem e Destino para cadastrar a rota corretamente!");
       return;
     }
@@ -127,10 +134,10 @@ const Admin = () => {
       const routeStepsIds = stepsList.map(step => step.id);
       
       if (editingRouteId) {
-        await updateRoute(editingRouteId, routeName, routeStepsIds, faculdadeId, origemId, destinoId);
+        await updateRoute(editingRouteId, routeName, routeStepsIds, faculdadeId, origemNome, destinoNome);
         alert("Rota atualizada com sucesso!");
       } else {
-        await publishRoute(routeName, routeStepsIds, faculdadeId, origemId, destinoId);
+        await publishRoute(routeName, routeStepsIds, faculdadeId, origemNome, destinoNome);
         alert("Rota publicada com sucesso!");
       }
       
@@ -144,8 +151,9 @@ const Admin = () => {
     setEditingRouteId(route.id);
     setRouteName(route.name || "");
     setFaculdadeId(route.faculdade?.toString() || "");
-    setOrigemId(route.origem_id?.toString() || "");
-    setDestinoId(route.destino_id?.toString() || "");
+    // Agora puxamos o nome direto da coluna que foi alterada para texto
+    setOrigemNome(route.origem_id?.toString() || "");
+    setDestinoNome(route.destino_id?.toString() || "");
 
     const stepsData = await getStepsByIds(route.steps || []);
     setStepsList(stepsData);
@@ -161,13 +169,6 @@ const Admin = () => {
         alert(err.message);
       }
     }
-  };
-
-  const getPointName = (id: string, isOrigem: boolean) => {
-    if (!id) return "N/A";
-    const list = isOrigem ? origens : destinos;
-    const pt = list.find(p => p.id?.toString() === id.toString());
-    return pt ? pt.name : `ID: ${id}`;
   };
 
   return (
@@ -195,17 +196,17 @@ const Admin = () => {
 
           <div>
             <label className={styles.label}>Origem (Ponto de Partida)</label>
-            <select className={styles.input} value={origemId} onChange={(e) => setOrigemId(e.target.value)}>
+            <select className={styles.input} value={origemNome} onChange={(e) => setOrigemNome(e.target.value)}>
               <option value="">Selecione de onde a rota sai...</option>
-              {origens?.map(pt => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+              {origensUnicas.map(nome => <option key={nome} value={nome}>{nome}</option>)}
             </select>
           </div>
 
           <div>
             <label className={styles.label}>Destino (Sala)</label>
-            <select className={styles.input} value={destinoId} onChange={(e) => setDestinoId(e.target.value)}>
+            <select className={styles.input} value={destinoNome} onChange={(e) => setDestinoNome(e.target.value)}>
               <option value="">Selecione para onde a rota vai...</option>
-              {destinos?.map(pt => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+              {destinosUnicos.map(nome => <option key={nome} value={nome}>{nome}</option>)}
             </select>
           </div>
         </div>
@@ -264,7 +265,7 @@ const Admin = () => {
                 <div key={step.id} className={styles.searchItem} onClick={() => handleAddExistingStep(step)}>
                   <img src={step.image} alt="" className={styles.miniImg} />
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '0 8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{step.name}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{step.name || "Sem título"}</span>
                     <span style={{ fontSize: '12px', color: '#666' }}>{step.description}</span>
                   </div>
                   <Plus size={16} color="#FFB300" />
@@ -378,8 +379,8 @@ const Admin = () => {
         <button
           className={styles.btnPublish}
           onClick={handleSaveRoute}
-          disabled={stepsList.length === 0 || !faculdadeId || !origemId || !destinoId || isPublishing}
-          style={{ opacity: (stepsList.length === 0 || !faculdadeId || !origemId || !destinoId || isPublishing) ? 0.6 : 1, width: '100%', padding: '16px', fontSize: '1.1rem', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '12px', cursor: 'pointer', backgroundColor: '#111', marginTop: '10px' }}
+          disabled={stepsList.length === 0 || !faculdadeId || !origemNome || !destinoNome || isPublishing}
+          style={{ opacity: (stepsList.length === 0 || !faculdadeId || !origemNome || !destinoNome || isPublishing) ? 0.6 : 1, width: '100%', padding: '16px', fontSize: '1.1rem', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '12px', cursor: 'pointer', backgroundColor: '#111', marginTop: '10px' }}
         >
           {isPublishing ? "SALVANDO..." : (editingRouteId ? "ATUALIZAR ROTA" : "PUBLICAR NOVA ROTA")}
         </button>
@@ -404,8 +405,9 @@ const Admin = () => {
                   {r.name || `Rota #${r.id} (Sem Nome)`}
                 </span>
                 <span style={{ fontSize: '14px', color: '#666' }}>
-                  <strong>Origem:</strong> {getPointName(r.origem_id, true)} <br/>
-                  <strong>Destino:</strong> {getPointName(r.destino_id, false)}
+                  {/* O banco de dados agora salva o nome puro, então exibimos diretamente */}
+                  <strong>Origem:</strong> {r.origem_id || "N/A"} <br/>
+                  <strong>Destino:</strong> {r.destino_id || "N/A"}
                 </span>
               </div>
 
