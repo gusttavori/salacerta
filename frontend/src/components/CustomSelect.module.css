@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;300;400;500;600;700&display=swap');
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.control {
+  width: 100%;
+  height: 45px;
+  padding: 12px 14px;
+  border: 1px solid #FFC107;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 300;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.35);
+  border-color: #FFB300;
+}
+
+.placeholder {
+  font-family: 'Montserrat', sans-serif;
+  color: #aaa;
+  font-weight: 300;
+}
+
+.value {
+  font-family: 'Montserrat', sans-serif;
+  color: #333;
+  font-weight: 400;
+}
+
+.arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #FFB300;
+  transition: transform 0.25s ease;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  animation: dropdownIn 0.18s ease forwards;
+  transform-origin: top;
+}
+
+.menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background-color: #FFD54F;
+  border-radius: 10px;
+}
+
+.menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.option {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: #333;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.option:hover {
+  background-color: #FFF3CD;
+}
+
+.option:focus-visible {
+  outline: none;
+  background-color: #FFE8A1;
+}
+
+.option.selected {
+  background-color: #FFE8A1;
+  font-weight: 600;
+}
+
+.option.selected::after {
+  content: "✓";
+  font-size: 0.9rem;
+  color: #FF9800;
+}
+
+.option.disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.option.disabled:hover {
+  background: transparent;
+}
+
+.disabled .control {
+  background: #F2F2F2;
+  border-color: #E0E0E0;
+  cursor: not-allowed;
+}
+
+.disabled .arrow {
+  border-top-color: #CCC;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
