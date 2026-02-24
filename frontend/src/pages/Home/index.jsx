@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ChevronDown,
   Check,
@@ -19,22 +19,47 @@ import { RouteViewer } from "../../components/location/RouteViewer";
 
 export function Home() {
   const [faculdadeSel, setFaculdadeSel] = useState(null);
-  
-  // Agora guardam apenas o NOME (texto) selecionado
   const [origemSel, setOrigemSel] = useState(null);
   const [destinoSel, setDestinoSel] = useState(null);
-  
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const { faculdadesList, loading: loadingFaculdades } = useFaculdades();
   const { origens, destinos, loading: loadingPoints, error: pointsError } = useReferencePoints();
-  
   const { route, stepsRoute, loading: loadingRoute, error: routeError, fetchRoute, clearRoute } = useRoute();
 
-  // MÁGICA: Filtra os arrays para remover nomes duplicados.
-  // Garante que "Portaria" apareça apenas 1x no dropdown para o aluno.
-  const origensUnicas = Array.from(new Set(origens.map(p => p.name))).filter(Boolean);
-  const destinosUnicos = Array.from(new Set(destinos.map(p => p.name))).filter(Boolean);
+  const origensUnicas = Array.from(
+    new Map(origens.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
+  );
+  const destinosUnicos = Array.from(
+    new Map(destinos.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
+  );
+
+  // --- MÁGICA UX/UI: AGRUPAMENTO DINÂMICO DE SALAS ---
+  // Essa função lê o nome do destino e o encaixa em uma categoria visual
+  const destinosAgrupados = useMemo(() => {
+    const grupos = {
+      "Salas de Aula": [],
+      "Laboratórios": [],
+      "Administrativo": [],
+      "Outros Locais": []
+    };
+
+    destinosUnicos.forEach(nome => {
+      const nomeLower = nome.toLowerCase();
+      if (nomeLower.includes("sala")) {
+        grupos["Salas de Aula"].push(nome);
+      } else if (nomeLower.includes("lab") || nomeLower.includes("informática")) {
+        grupos["Laboratórios"].push(nome);
+      } else if (nomeLower.includes("coordenação") || nomeLower.includes("diretoria") || nomeLower.includes("secretaria") || nomeLower.includes("atendimento")) {
+        grupos["Administrativo"].push(nome);
+      } else {
+        grupos["Outros Locais"].push(nome);
+      }
+    });
+
+    // Remove categorias que ficaram vazias para não sujar a tela
+    return Object.entries(grupos).filter(([_, itens]) => itens.length > 0);
+  }, [destinosUnicos]);
 
   function toggleDropdown(nome) {
     setActiveDropdown((prev) => (prev === nome ? null : nome));
@@ -63,7 +88,6 @@ export function Home() {
 
   async function handleLocalizar() {
     if (faculdadeSel && origemSel && destinoSel) {
-      // Agora envia o NOME da origem e do destino para a busca
       fetchRoute(faculdadeSel.id, origemSel, destinoSel);
     }
   }
@@ -75,7 +99,6 @@ export function Home() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div style={{ width: "24px" }}></div>
         <img src={logoSalaCerta} alt="Logo Sala Certa" className={styles.headerLogo} />
       </div>
 
@@ -85,7 +108,7 @@ export function Home() {
       </div>
 
       {pointsError && (
-        <div style={{ display: "flex", gap: "8px", color: "#d32f2f", marginBottom: "16px", padding: "0 16px" }}>
+        <div className={styles.errorToast}>
           <AlertCircle size={20} />
           <span>{pointsError}</span>
         </div>
@@ -99,15 +122,11 @@ export function Home() {
             className={`${styles.dropdownTrigger} ${activeDropdown === "faculdade" ? styles.active : ""}`}
             onClick={() => toggleDropdown("faculdade")}
           >
-            <div className={styles.triggerContent} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Building2 size={20} color={faculdadeSel ? "#000" : "#666"} />
-              {faculdadeSel ? (
-                <span className={styles.textoSelecionado}>{faculdadeSel.name}</span>
-              ) : (
-                <span className={styles.textoTrigger}>
-                  {loadingFaculdades ? "Carregando faculdades..." : "Selecione sua faculdade"}
-                </span>
-              )}
+            <div className={styles.triggerContent}>
+              <Building2 size={20} color={faculdadeSel ? "#111" : "#666"} />
+              <span className={faculdadeSel ? styles.textoSelecionado : styles.textoTrigger}>
+                {faculdadeSel ? faculdadeSel.name : (loadingFaculdades ? "Carregando..." : "Selecione sua faculdade")}
+              </span>
             </div>
             <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "faculdade" ? styles.rotate : ""}`} />
           </div>
@@ -116,8 +135,8 @@ export function Home() {
             <div className={styles.dropdownLista} role="listbox">
               {faculdadesList.map((item) => (
                 <div key={item.id} className={styles.dropdownItem} onClick={() => handleSelectFaculdade(item)}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{item.name}</div>
-                  {faculdadeSel?.id === item.id && <Check size={16} color="#FFB300" />}
+                  <span>{item.name}</span>
+                  {faculdadeSel?.id === item.id && <Check size={18} color="#FFB300" />}
                 </div>
               ))}
             </div>
@@ -131,15 +150,11 @@ export function Home() {
               className={`${styles.dropdownTrigger} ${activeDropdown === "origem" ? styles.active : ""}`}
               onClick={() => toggleDropdown("origem")}
             >
-              <div className={styles.triggerContent} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <MapPin size={20} color={origemSel ? "#000" : "#666"} />
-                {origemSel ? (
-                  <span className={styles.textoSelecionado}>{origemSel}</span>
-                ) : (
-                  <span className={styles.textoTrigger}>
-                    {loadingPoints ? "Carregando locais..." : "Onde você está?"}
-                  </span>
-                )}
+              <div className={styles.triggerContent}>
+                <MapPin size={20} color={origemSel ? "#111" : "#666"} />
+                <span className={origemSel ? styles.textoSelecionado : styles.textoTrigger}>
+                  {origemSel ? origemSel : (loadingPoints ? "Carregando locais..." : "Onde você está?")}
+                </span>
               </div>
               <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "origem" ? styles.rotate : ""}`} />
             </div>
@@ -150,8 +165,8 @@ export function Home() {
                 
                 {origensUnicas.map((nome, index) => (
                   <div key={index} className={styles.dropdownItem} onClick={() => handleSelectOrigem(nome)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{nome}</div>
-                    {origemSel === nome && <Check size={16} color="#FFB300" />}
+                    <span>{nome}</span>
+                    {origemSel === nome && <Check size={18} color="#FFB300" />}
                   </div>
                 ))}
               </div>
@@ -159,32 +174,36 @@ export function Home() {
           </div>
         )}
 
-        {/* DROPDOWN DESTINO */}
+        {/* DROPDOWN DESTINO (AGORA COM CATEGORIAS) */}
         {origemSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
               className={`${styles.dropdownTrigger} ${activeDropdown === "destino" ? styles.active : ""}`}
               onClick={() => toggleDropdown("destino")}
             >
-              <div className={styles.triggerContent} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Footprints size={20} color={destinoSel ? "#000" : "#666"} />
-                {destinoSel ? (
-                  <span className={styles.textoSelecionado}>{destinoSel}</span>
-                ) : (
-                  <span className={styles.textoTrigger}>Para onde quer ir?</span>
-                )}
+              <div className={styles.triggerContent}>
+                <Footprints size={20} color={destinoSel ? "#111" : "#666"} />
+                <span className={destinoSel ? styles.textoSelecionado : styles.textoTrigger}>
+                  {destinoSel ? destinoSel : "Para onde quer ir?"}
+                </span>
               </div>
               <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "destino" ? styles.rotate : ""}`} />
             </div>
 
             {activeDropdown === "destino" && (
               <div className={styles.dropdownLista} role="listbox">
-                {destinosUnicos.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
+                {destinosAgrupados.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
                 
-                {destinosUnicos.map((nome, index) => (
-                  <div key={index} className={styles.dropdownItem} onClick={() => handleSelectDestino(nome)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{nome}</div>
-                    {destinoSel === nome && <Check size={16} color="#FFB300" />}
+                {/* Renderização Agrupada */}
+                {destinosAgrupados.map(([categoria, salas]) => (
+                  <div key={categoria}>
+                    <div className={styles.categoryHeader}>{categoria}</div>
+                    {salas.map((nome, index) => (
+                      <div key={index} className={styles.dropdownItem} onClick={() => handleSelectDestino(nome)}>
+                        <span>{nome}</span>
+                        {destinoSel === nome && <Check size={18} color="#FFB300" />}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -197,13 +216,12 @@ export function Home() {
         className={styles.btnLocalizar} 
         onClick={handleLocalizar}
         disabled={!faculdadeSel || !origemSel || !destinoSel || loadingRoute}
-        style={{ opacity: (!faculdadeSel || !origemSel || !destinoSel || loadingRoute) ? 0.6 : 1 }}
       >
         {textoBotao}
       </button>
 
       {routeError && (
-        <div style={{ marginTop: '24px', backgroundColor: '#ffebee', color: '#d32f2f', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.errorBox}>
           <AlertCircle size={20} />
           <span>{routeError}</span>
         </div>
