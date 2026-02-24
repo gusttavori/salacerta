@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Plus, X, Trash2, Edit2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Search, Plus, X, Trash2, Edit2, UploadCloud, ChevronRight, ImagePlus } from "lucide-react";
 import styles from "./Admin.module.css";
 import { StepsModel } from "../../Repositories/steps";
 import { useAdminRoute } from "../../hooks/useAdminRoute";
@@ -10,32 +10,36 @@ interface StepWithId extends StepsModel {
   id: string;
 }
 
+// Interface para o carrossel de fotos em lote
+interface BatchStep {
+  tempId: string;
+  file: File;
+  previewUrl: string;
+  name: string;
+  description: string;
+  is_origem: boolean;
+}
+
 const Admin = () => {
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
 
   const [routeName, setRouteName] = useState("");
   const [faculdadeId, setFaculdadeId] = useState("");
-  
-  // Alterado para guardar o NOME do local (ex: "Portaria") em vez do ID numérico
   const [origemNome, setOrigemNome] = useState("");
   const [destinoNome, setDestinoNome] = useState("");
 
   const [stepsList, setStepsList] = useState<StepWithId[]>([]);
-  const [creatingStep, setCreatingStep] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [formData, setFormData] = useState<StepsModel>({
-    name: "",
-    description: "",
-    image: "",
-    is_origem: false,
-  });
+  // Estado do Lote de Fotos (Carrossel)
+  const [batchSteps, setBatchSteps] = useState<BatchStep[]>([]);
+  const [isUploadingBatch, setIsUploadingBatch] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { faculdadesList } = useFaculdades();
   const { origens, destinos, fetchPoints } = useReferencePoints(); 
   const { 
-    isUploading, 
     isPublishing, 
     searchResults,
     registeredRoutes,
@@ -49,25 +53,80 @@ const Admin = () => {
     getStepsByIds
   } = useAdminRoute();
 
-  // MÁGICA: Filtra os arrays para remover nomes duplicados.
-  // Garante que "Portaria" apareça apenas 1x no dropdown.
   const origensUnicas = Array.from(new Set(origens.map(p => p.name))).filter(Boolean) as string[];
   const destinosUnicos = Array.from(new Set(destinos.map(p => p.name))).filter(Boolean) as string[];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  // --- LÓGICA DO LOTE (CARROSSEL) ---
+  const handleMultipleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    
+    const newBatch = files.map(file => ({
+      tempId: Math.random().toString(36).substring(7),
+      file,
+      previewUrl: URL.createObjectURL(file),
+      name: "",
+      description: "",
+      is_origem: false
+    }));
+
+    setBatchSteps(prev => [...prev, ...newBatch]);
+    if (fileInputRef.current) fileInputRef.current.value = ""; // Reseta o input
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const updateBatchStep = (tempId: string, field: keyof BatchStep, value: any) => {
+    setBatchSteps(prev => prev.map(step => 
+      step.tempId === tempId ? { ...step, [field]: value } : step
+    ));
+  };
 
-    const url = await uploadImage(file);
-    if (url) {
-      setFormData((prev) => ({ ...prev, image: url }));
+  const removeBatchStep = (tempId: string) => {
+    setBatchSteps(prev => prev.filter(step => step.tempId !== tempId));
+  };
+
+  const handleSaveBatch = async () => {
+    // Validação
+    const hasEmptyDescription = batchSteps.some(step => !step.description.trim());
+    if (hasEmptyDescription) {
+      alert("Por favor, preencha a instrução de todas as fotos no carrossel antes de salvar.");
+      return;
+    }
+
+    setIsUploadingBatch(true);
+    try {
+      const savedSteps: StepWithId[] = [];
+
+      for (const bStep of batchSteps) {
+        const url = await uploadImage(bStep.file);
+        if (!url) throw new Error("Erro ao fazer upload de uma das imagens.");
+
+        const newStepData = {
+          name: bStep.name,
+          description: bStep.description,
+          image: url,
+          is_origem: bStep.is_origem
+        };
+
+        const createdStep = await createNewStep(newStepData);
+        savedSteps.push({ ...newStepData, id: createdStep.id });
+
+        // Atualiza os seletores principais se o usuário definiu nomes nos cards
+        if (bStep.name && bStep.name.trim() !== "") {
+          if (bStep.is_origem) setOrigemNome(bStep.name);
+          else setDestinoNome(bStep.name);
+        }
+      }
+
+      await fetchPoints();
+      setStepsList(prev => [...prev, ...savedSteps]);
+      setBatchSteps([]); // Limpa o carrossel após salvar
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsUploadingBatch(false);
     }
   };
+  // ----------------------------------
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -82,51 +141,29 @@ const Admin = () => {
     clearSearch();
   };
 
-  const handleCreatingStep = async () => {
-    if (!formData.description || !formData.image) {
-      alert("Preencha a Instrução e coloque a Imagem da etapa!");
-      return;
-    }
-
-    try {
-      const newStep = await createNewStep(formData);
-      const newStepComplete: StepWithId = { ...formData, id: newStep.id };
-
-      setStepsList([...stepsList, newStepComplete]);
-
-      if (formData.name && formData.name.trim() !== "") {
-        await fetchPoints(); 
-        
-        if (formData.is_origem) {
-          setOrigemNome(formData.name); // Salva o nome
-        } else {
-          setDestinoNome(formData.name); // Salva o nome
-        }
-      }
-
-      setFormData({ name: "", description: "", image: "", is_origem: false });
-      setCreatingStep(false);
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
-
   const handleRemoveStep = (indexToRemove: number) => {
     setStepsList(stepsList.filter((_, index) => index !== indexToRemove));
   };
 
   const handleClearForm = () => {
-    setEditingRouteId(null);
-    setRouteName("");
-    setFaculdadeId("");
-    setOrigemNome("");
-    setDestinoNome("");
-    setStepsList([]);
+    if (window.confirm("Deseja realmente limpar tudo? O progresso não salvo será perdido.")) {
+      setEditingRouteId(null);
+      setRouteName("");
+      setFaculdadeId("");
+      setOrigemNome("");
+      setDestinoNome("");
+      setStepsList([]);
+      setBatchSteps([]);
+    }
   };
 
   const handleSaveRoute = async () => {
     if (!faculdadeId || !origemNome || !destinoNome) {
-      alert("Selecione a Faculdade, Origem e Destino para cadastrar a rota corretamente!");
+      alert("Selecione a Faculdade, a Origem e o Destino para cadastrar a rota corretamente!");
+      return;
+    }
+    if (stepsList.length === 0) {
+      alert("Adicione pelo menos uma etapa (foto) à rota antes de publicar.");
       return;
     }
 
@@ -141,7 +178,12 @@ const Admin = () => {
         alert("Rota publicada com sucesso!");
       }
       
-      handleClearForm();
+      setEditingRouteId(null);
+      setRouteName("");
+      setFaculdadeId("");
+      setOrigemNome("");
+      setDestinoNome("");
+      setStepsList([]);
     } catch (error: any) {
       alert(error.message);
     }
@@ -151,7 +193,6 @@ const Admin = () => {
     setEditingRouteId(route.id);
     setRouteName(route.name || "");
     setFaculdadeId(route.faculdade?.toString() || "");
-    // Agora puxamos o nome direto da coluna que foi alterada para texto
     setOrigemNome(route.origem_id?.toString() || "");
     setDestinoNome(route.destino_id?.toString() || "");
 
@@ -173,81 +214,96 @@ const Admin = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Painel do Administrador</h1>
+      <div className={styles.headerTitleContainer}>
+        <h1 className={styles.title}>Criação de Rotas</h1>
+        <p className={styles.subtitle}>Siga o passo a passo para mapear um novo trajeto no campus.</p>
+      </div>
 
       {editingRouteId && (
-        <div style={{ backgroundColor: '#FFB300', color: '#000', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Editando Rota #{editingRouteId}</span>
-          <button onClick={handleClearForm} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>X Cancelar</button>
+        <div className={styles.editingAlert}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Edit2 size={20} />
+            <span>Editando a rota <strong>#{editingRouteId}</strong></span>
+          </div>
+          <button onClick={handleClearForm} className={styles.btnCancelEdit}>Cancelar Edição</button>
         </div>
       )}
 
-      <section className={styles.routeSection} style={{ backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '8px', marginBottom: '24px' }}>
-        <h3 style={{ marginBottom: '16px', fontSize: '18px', color: '#333' }}>1. Configuração da Rota</h3>
+      {/* --- PASSO 1: CONFIGURAÇÃO --- */}
+      <section className={styles.cardSection}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.stepNumber}>1</div>
+          <h3 className={styles.sectionTitle}>Detalhes do Trajeto</h3>
+        </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
-          <div>
-            <label className={styles.label}>Faculdade</label>
+        <div className={styles.gridContainer}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Campus / Unidade</label>
             <select className={styles.input} value={faculdadeId} onChange={(e) => setFaculdadeId(e.target.value)}>
-              <option value="">Selecione a unidade...</option>
+              <option value="">Selecione...</option>
               {faculdadesList?.map(fac => <option key={fac.id} value={fac.id}>{fac.name}</option>)}
             </select>
           </div>
 
-          <div>
-            <label className={styles.label}>Origem (Ponto de Partida)</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>De onde sai? (Origem)</label>
             <select className={styles.input} value={origemNome} onChange={(e) => setOrigemNome(e.target.value)}>
-              <option value="">Selecione de onde a rota sai...</option>
+              <option value="">Ex: Portaria Principal...</option>
               {origensUnicas.map(nome => <option key={nome} value={nome}>{nome}</option>)}
             </select>
           </div>
 
-          <div>
-            <label className={styles.label}>Destino (Sala)</label>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Para onde vai? (Destino)</label>
             <select className={styles.input} value={destinoNome} onChange={(e) => setDestinoNome(e.target.value)}>
-              <option value="">Selecione para onde a rota vai...</option>
+              <option value="">Ex: Sala 402...</option>
               {destinosUnicos.map(nome => <option key={nome} value={nome}>{nome}</option>)}
             </select>
           </div>
         </div>
 
-        <label className={styles.label}>Nome Interno da Rota (Opcional)</label>
-        <input
-          className={styles.input}
-          type="text"
-          placeholder="Ex: Portaria para Sala 127..."
-          value={routeName}
-          onChange={(e) => setRouteName(e.target.value)}
-        />
+        <div className={styles.inputGroup} style={{ marginTop: '16px' }}>
+          <label className={styles.label}>Nome opcional para controle interno</label>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="Ex: Rota Noturna Portaria > Bloco B"
+            value={routeName}
+            onChange={(e) => setRouteName(e.target.value)}
+          />
+        </div>
       </section>
 
-      <section className={styles.stepsSection}>
-        <header className={styles.header}>
-          <h3>2. Etapas ({stepsList.length})</h3>
-          <div className={styles.headerActions}>
-            {!creatingStep && !showSearch && (
-              <>
-                <button
-                  className={styles.btnSecondary}
-                  onClick={() => setShowSearch(true)}
-                >
-                  <Search size={18} /> Buscar Existente
-                </button>
-                <button
-                  className={styles.btnPrimary}
-                  onClick={() => setCreatingStep(true)}
-                >
-                  <Plus size={18} /> Nova Etapa
-                </button>
-              </>
-            )}
-          </div>
-        </header>
+      {/* --- PASSO 2: ETAPAS / FOTOS --- */}
+      <section className={styles.cardSection}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.stepNumber}>2</div>
+          <h3 className={styles.sectionTitle}>Mapeamento (Fotos)</h3>
+        </div>
+        
+        <div className={styles.actionButtons}>
+          <button className={styles.btnSecondary} onClick={() => setShowSearch(true)}>
+            <Search size={18} /> Reutilizar Foto
+          </button>
+          
+          <input 
+            type="file" 
+            multiple 
+            accept="image/*,.heic,.heif" 
+            ref={fileInputRef}
+            onChange={handleMultipleFilesChange}
+            style={{ display: 'none' }}
+          />
+          <button className={styles.btnPrimary} onClick={() => fileInputRef.current?.click()}>
+            <ImagePlus size={18} /> Adicionar Fotos (Lote)
+          </button>
+        </div>
 
+        {/* MODAL DE BUSCA */}
         {showSearch && (
           <div className={styles.searchBox}>
             <div className={styles.searchHeader}>
-              <h4>Buscar Etapa no Banco</h4>
+              <h4>Buscar foto já cadastrada</h4>
               <button onClick={() => { setShowSearch(false); clearSearch(); }} className={styles.btnClose}>
                 <X size={20} />
               </button>
@@ -255,7 +311,7 @@ const Admin = () => {
             <input
               className={styles.input}
               type="text"
-              placeholder="Busque pelo nome ou instrução..."
+              placeholder="Digite 'Corredor', 'Escada', 'Portaria'..."
               value={searchTerm}
               onChange={handleSearchInput}
               autoFocus
@@ -264,175 +320,145 @@ const Admin = () => {
               {searchResults.map((step: any) => (
                 <div key={step.id} className={styles.searchItem} onClick={() => handleAddExistingStep(step)}>
                   <img src={step.image} alt="" className={styles.miniImg} />
-                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '0 8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{step.name || "Sem título"}</span>
-                    <span style={{ fontSize: '12px', color: '#666' }}>{step.description}</span>
+                  <div className={styles.searchItemInfo}>
+                    <span className={styles.searchItemTitle}>{step.name || "Sem título de local"}</span>
+                    <span className={styles.searchItemDesc}>{step.description}</span>
                   </div>
-                  <Plus size={16} color="#FFB300" />
+                  <Plus size={18} color="#FFB300" />
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {creatingStep && (
-          <div className={styles.stepForm}>
-            <h4>Nova Etapa</h4>
-
-            <div className={styles.imageUploadSection}>
-              <label className={styles.label}>Foto do Local</label>
-              <div className={styles.imagePreviewContainerLarge}>
-                {isUploading ? (
-                  <div className={styles.uploadPlaceholder}>
-                    Processando imagem...
+        {/* O CARROSSEL MÁGICO DE PREENCHIMENTO */}
+        {batchSteps.length > 0 && (
+          <div className={styles.batchArea}>
+            <div className={styles.batchHeader}>
+              <h4>Completar {batchSteps.length} nova(s) foto(s)</h4>
+              <p>Preencha as instruções de cada foto e clique em salvar para processar todas.</p>
+            </div>
+            
+            <div className={styles.carouselContainer}>
+              {batchSteps.map((bStep, index) => (
+                <div key={bStep.tempId} className={styles.carouselCard}>
+                  <button className={styles.btnRemoveBatch} onClick={() => removeBatchStep(bStep.tempId)}>
+                    <X size={16} />
+                  </button>
+                  <div className={styles.carouselBadge}>{index + 1}</div>
+                  
+                  <img src={bStep.previewUrl} alt="Preview" className={styles.carouselImg} />
+                  
+                  <div className={styles.carouselInputs}>
+                    <input
+                      className={styles.inputSmall}
+                      type="text"
+                      placeholder="Instrução exata (Obrigatório)*"
+                      value={bStep.description}
+                      onChange={(e) => updateBatchStep(bStep.tempId, "description", e.target.value)}
+                    />
+                    <input
+                      className={styles.inputSmall}
+                      type="text"
+                      placeholder="Nome da Sala (Opcional)"
+                      value={bStep.name}
+                      onChange={(e) => updateBatchStep(bStep.tempId, "name", e.target.value)}
+                    />
+                    
+                    {bStep.name.trim() !== "" && (
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={bStep.is_origem}
+                          onChange={(e) => updateBatchStep(bStep.tempId, "is_origem", e.target.checked)}
+                        />
+                        É a Origem?
+                      </label>
+                    )}
                   </div>
-                ) : formData.image ? (
-                  <img src={formData.image} alt="Preview" className={styles.imagePreviewLarge} />
-                ) : (
-                  <div className={styles.uploadPlaceholder}>Nenhuma imagem selecionada</div>
-                )}
-              </div>
-              <input type="file" onChange={handleFileChange} accept="image/*,.heic,.heif" disabled={isUploading} />
+                </div>
+              ))}
             </div>
 
-            <div className={styles.inputGroup} style={{ marginTop: '16px' }}>
-              <label className={styles.label}>
-                Nome do Local <span style={{ color: '#888', fontWeight: 'normal' }}>(Preencha APENAS se for Origem ou Destino final)</span>
-              </label>
-              <input
-                className={styles.input}
-                name="name"
-                type="text"
-                placeholder="Ex: Portaria, Sala 402..."
-                value={formData.name || ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            {formData.name && formData.name.trim() !== "" && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', padding: '12px', backgroundColor: '#fffdf5', border: '1px solid #ffb300', borderRadius: '8px' }}>
-                <input
-                  type="checkbox"
-                  id="is_origem"
-                  checked={formData.is_origem || false}
-                  onChange={(e) => setFormData({ ...formData, is_origem: e.target.checked })}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#ffb300' }}
-                />
-                <label htmlFor="is_origem" style={{ cursor: 'pointer', margin: 0, color: '#333', fontSize: '14px' }}>
-                  Este local é um <strong>Ponto de Partida (Origem)</strong>?
-                </label>
-              </div>
-            )}
-
-            <div className={styles.inputGroup} style={{ marginTop: '16px' }}>
-              <label className={styles.label}>Instrução de Rota (Exibido na Foto)</label>
-              <input
-                className={styles.input}
-                name="description"
-                type="text"
-                placeholder="Ex: Vire à direita na portaria descendo em direção à cantina..."
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className={styles.formButtons} style={{ marginTop: '24px' }}>
-              <button 
-                className={styles.btnSave} 
-                onClick={handleCreatingStep} 
-                disabled={isUploading || !formData.image || !formData.description}
-                style={{ opacity: (isUploading || !formData.image || !formData.description) ? 0.6 : 1 }}
-              >
-                Salvar Etapa
-              </button>
-              <button className={styles.btnCancel} onClick={() => setCreatingStep(false)}>
-                Cancelar
-              </button>
-            </div>
+            <button 
+              className={styles.btnSaveBatch} 
+              onClick={handleSaveBatch}
+              disabled={isUploadingBatch}
+            >
+              {isUploadingBatch ? "Fazendo Upload... Aguarde" : <><UploadCloud size={20} /> Salvar {batchSteps.length} foto(s) na rota</>}
+            </button>
           </div>
         )}
 
-        <ul className={styles.stepsList}>
-          {stepsList.map((step, index) => (
-            <li key={`${step.id}-${index}`} className={styles.stepItem}>
-              <span className={styles.badge}>{index + 1}</span>
-              <div className={styles.imageContainer}>
-                <img src={step.image} alt={`Passo ${index + 1}`} className={styles.previewImgLarge} />
+        {/* LISTA DE FOTOS JÁ ADICIONADAS */}
+        {stepsList.length > 0 && (
+          <div className={styles.stepsTimeline}>
+            {stepsList.map((step, index) => (
+              <div key={`${step.id}-${index}`} className={styles.timelineItem}>
+                <div className={styles.timelineConnector}>
+                  <div className={styles.timelineDot}>{index + 1}</div>
+                  {index < stepsList.length - 1 && <div className={styles.timelineLine}></div>}
+                </div>
+                
+                <div className={styles.timelineCard}>
+                  <img src={step.image} alt={`Passo ${index + 1}`} className={styles.timelineImg} />
+                  <div className={styles.timelineContent}>
+                    {step.name && <span className={styles.timelineName}>{step.name}</span>}
+                    <span className={styles.timelineDesc}>{step.description}</span>
+                  </div>
+                  <button className={styles.btnDeleteStep} onClick={() => handleRemoveStep(index)} title="Remover da rota">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
-              <div className={styles.stepContent} style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#FFB300', marginBottom: '4px' }}>
-                  {step.name}
-                </span>
-                <span className={styles.stepDescription} style={{ fontSize: '14px', color: '#555' }}>
-                  {step.description}
-                </span>
-              </div>
-              <button className={styles.btnDelete} onClick={() => handleRemoveStep(index)}>
-                <Trash2 size={20} color="#ff4444" />
-              </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        )}
+        
+        {stepsList.length === 0 && !showSearch && batchSteps.length === 0 && (
+          <div className={styles.emptyState}>
+            Nenhuma foto adicionada à rota ainda.
+          </div>
+        )}
       </section>
 
-      <div style={{ display: 'flex', gap: '16px' }}>
+      {/* BOTÃO FINALIZAR */}
+      <div className={styles.publishContainer}>
         <button
-          className={styles.btnPublish}
+          className={styles.btnPublishFinal}
           onClick={handleSaveRoute}
-          disabled={stepsList.length === 0 || !faculdadeId || !origemNome || !destinoNome || isPublishing}
-          style={{ opacity: (stepsList.length === 0 || !faculdadeId || !origemNome || !destinoNome || isPublishing) ? 0.6 : 1, width: '100%', padding: '16px', fontSize: '1.1rem', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '12px', cursor: 'pointer', backgroundColor: '#111', marginTop: '10px' }}
+          disabled={stepsList.length === 0 || !faculdadeId || !origemNome || !destinoNome || isPublishing || batchSteps.length > 0}
         >
-          {isPublishing ? "SALVANDO..." : (editingRouteId ? "ATUALIZAR ROTA" : "PUBLICAR NOVA ROTA")}
+          {isPublishing ? "PUBLICANDO..." : (editingRouteId ? "SALVAR EDIÇÃO" : "PUBLICAR ROTA COMPLETA")}
         </button>
-        {editingRouteId && (
-          <button className={styles.btnCancel} style={{ marginTop: '10px', padding: '0 24px', borderRadius: '12px' }} onClick={handleClearForm}>
-            Cancelar
-          </button>
-        )}
       </div>
 
-      <section className={styles.routeSection} style={{ marginTop: '48px', borderTop: '2px solid #eee', paddingTop: '32px' }}>
-        <h3 style={{ marginBottom: '20px', fontSize: '20px', color: '#111' }}>Rotas Cadastradas no Sistema ({registeredRoutes.length})</h3>
+      {/* --- LISTA DE ROTAS CADASTRADAS --- */}
+      <section className={styles.cardSection} style={{ marginTop: '40px' }}>
+        <h3 className={styles.sectionTitle}>Rotas no Sistema ({registeredRoutes.length})</h3>
+        <p className={styles.subtitle} style={{ marginBottom: '24px' }}>Gerencie as rotas que já estão disponíveis para os alunos.</p>
         
-        {registeredRoutes.length === 0 && <p style={{ color: '#666' }}>Nenhuma rota cadastrada ainda.</p>}
+        {registeredRoutes.length === 0 && <p style={{ color: '#888' }}>Nenhuma rota encontrada.</p>}
 
-        <ul className={styles.stepsList}>
+        <div className={styles.routesGrid}>
           {registeredRoutes.map((r: any) => (
-            <li key={r.id} className={styles.stepItem} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#111' }}>
-                  {r.name || `Rota #${r.id} (Sem Nome)`}
-                </span>
-                <span style={{ fontSize: '14px', color: '#666' }}>
-                  {/* O banco de dados agora salva o nome puro, então exibimos diretamente */}
-                  <strong>Origem:</strong> {r.origem_id || "N/A"} <br/>
-                  <strong>Destino:</strong> {r.destino_id || "N/A"}
-                </span>
+            <div key={r.id} className={styles.routeCard}>
+              <div className={styles.routeCardInfo}>
+                <h4>{r.name || `Rota ${r.id} (Sem Nome)`}</h4>
+                <div className={styles.routePath}>
+                  <span>{r.origem_id || "Indefinido"}</span>
+                  <ChevronRight size={14} color="#aaa" />
+                  <span>{r.destino_id || "Indefinido"}</span>
+                </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  className={styles.btnSecondary} 
-                  style={{ padding: '8px 12px' }} 
-                  onClick={() => handleEditRoute(r)}
-                >
-                  <Edit2 size={18} /> Editar
-                </button>
-                <button 
-                  className={styles.btnDelete} 
-                  style={{ padding: '8px 12px' }} 
-                  onClick={() => handleDeleteRoute(r.id)}
-                >
-                  <Trash2 size={18} />
-                </button>
+              <div className={styles.routeCardActions}>
+                <button className={styles.btnIconEdit} onClick={() => handleEditRoute(r)} title="Editar"><Edit2 size={18} /></button>
+                <button className={styles.btnIconDelete} onClick={() => handleDeleteRoute(r.id)} title="Excluir"><Trash2 size={18} /></button>
               </div>
-
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
-
     </div>
   );
 };
