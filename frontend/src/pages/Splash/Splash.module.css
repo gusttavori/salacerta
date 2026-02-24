@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: 100dvh; 
   width: 100vw;
   background-color: #ffbb17;
   position: relative;
@@ -14,12 +14,20 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
+  width: 100%;
+  padding: 0 24px;
+  box-sizing: border-box;
+  /* Adicionei uma margem negativa inferior para subir o vídeo um pouco,
+     abrindo espaço visual para o footer brilhar mais */
+  margin-bottom: 40px; 
 }
 
 .logo {
-  width: 560px;
+  width: 100%;
+  max-width: 420px; 
   height: auto;
+  object-fit: contain;
 }
 
 .titulo {
@@ -33,13 +41,18 @@
 
 .footer {
   position: absolute;
-  bottom: 40px;
+  /* Subi de 40px para 60px para dar mais "ar" na parte inferior */
+  bottom: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .logoFlxche {
-  width: 100px;
-  opacity: 0.8;
+  /* Aumentei de 85px para 115px para ganhar destaque */
+  width: 120px;
+  /* Removi a opacidade 0.9 para ela ficar 100% sólida e nítida */
+  opacity: 1;
+  /* Opcional: uma sombra super suave para destacá-la do fundo amarelo */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
 }
