@@ -5,7 +5,8 @@ import {
   AlertCircle,
   MapPin,
   Footprints,
-  Building2 
+  Building2,
+  Info
 } from "lucide-react";
 import styles from "./Home.module.css";
 
@@ -34,8 +35,6 @@ export function Home() {
     new Map(destinos.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
   );
 
-  // --- MÁGICA UX/UI: AGRUPAMENTO DINÂMICO DE SALAS ---
-  // Essa função lê o nome do destino e o encaixa em uma categoria visual
   const destinosAgrupados = useMemo(() => {
     const grupos = {
       "Salas de Aula": [],
@@ -57,7 +56,6 @@ export function Home() {
       }
     });
 
-    // Remove categorias que ficaram vazias para não sujar a tela
     return Object.entries(grupos).filter(([_, itens]) => itens.length > 0);
   }, [destinosUnicos]);
 
@@ -174,7 +172,7 @@ export function Home() {
           </div>
         )}
 
-        {/* DROPDOWN DESTINO (AGORA COM CATEGORIAS) */}
+        {/* DROPDOWN DESTINO (COM CATEGORIAS) */}
         {origemSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
@@ -194,7 +192,6 @@ export function Home() {
               <div className={styles.dropdownLista} role="listbox">
                 {destinosAgrupados.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
                 
-                {/* Renderização Agrupada */}
                 {destinosAgrupados.map(([categoria, salas]) => (
                   <div key={categoria}>
                     <div className={styles.categoryHeader}>{categoria}</div>
@@ -219,6 +216,15 @@ export function Home() {
       >
         {textoBotao}
       </button>
+
+      {/* --- BANNER INFORMATIVO (DICA SUTIL ABAIXO DO BOTÃO) --- */}
+      <div className={styles.infoBanner}>
+        <Info size={24} />
+        <div>
+          <strong>Não encontrou sua sala? 🚧</strong>
+          <p>Ainda estamos mapeando o campus! Novas rotas são adicionadas continuamente ao sistema.</p>
+        </div>
+      </div>
 
       {routeError && (
         <div className={styles.errorBox}>

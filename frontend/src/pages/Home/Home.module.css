@@ -48,7 +48,7 @@
 /* CONTAINER DO FORMULÁRIO RESPONSIVO */
 .formContainer {
   width: 100%;
-  max-width: 420px; /* Isso garante que não estique infinitamente no PC */
+  max-width: 420px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -88,7 +88,7 @@
   align-items: center;
   gap: 12px;
   flex: 1;
-  overflow: hidden; /* Evita que nomes longos quebrem o layout */
+  overflow: hidden;
 }
 
 .textoTrigger {
@@ -130,13 +130,12 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 8px 0;
   z-index: 100;
-  max-height: 40vh; /* Usa Viewport Height: se adapta ao tamanho do celular */
+  max-height: 40vh;
   overflow-y: auto;
   border: 1px solid #eaeaea;
   animation: slideDown 0.2s ease-out;
 }
 
-/* SCROLLBAR CUSTOMIZADO PARA FICAR ELEGANTE */
 .dropdownLista::-webkit-scrollbar {
   width: 6px;
 }
@@ -148,7 +147,7 @@
   border-radius: 10px;
 }
 
-/* NOVO: ESTILO DA CATEGORIA DO MÓDULO/BLOCO */
+/* ESTILO DA CATEGORIA DO MÓDULO/BLOCO */
 .categoryHeader {
   padding: 8px 20px;
   font-size: 0.8rem;
@@ -164,7 +163,6 @@
   border-top: 1px solid #f0f0f0;
 }
 
-/* Oculta a borda superior do primeiro header */
 .categoryHeader:first-of-type {
   border-top: none;
 }
@@ -215,6 +213,46 @@
   box-shadow: none;
 }
 
+/* --- BANNER INFORMATIVO (Ajustado para o rodapé do formulário) --- */
+.infoBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: transparent;
+  padding: 16px 8px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 12px; /* Espaço entre o botão localizar e o banner */
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.infoBanner svg {
+  color: #ffb300;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoBanner div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoBanner strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.infoBanner p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #777;
+}
+
 /* ERROS E TOASTS */
 .errorBox, .errorToast {
   display: flex;
@@ -226,6 +264,7 @@
   border-radius: 12px;
   width: 100%;
   max-width: 420px;
+  margin-top: 12px; /* Margem ajustada para alinhar com o novo layout */
   margin-bottom: 24px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -235,7 +274,7 @@
 .footerLogo {
   width: 120px;
   opacity: 0.8;
-  margin-top: 150px;
+  margin-top: 100px;
   padding-bottom: 20px;
 }
 
