@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Search, Plus, X, Trash2, Edit2, UploadCloud, ChevronRight, ImagePlus } from "lucide-react";
+import heic2any from "heic2any"; // Importamos o conversor mágico
 import styles from "./Admin.module.css";
 import { StepsModel } from "../../Repositories/steps";
 import { useAdminRoute } from "../../hooks/useAdminRoute";
@@ -10,7 +11,6 @@ interface StepWithId extends StepsModel {
   id: string;
 }
 
-// Interface para o carrossel de fotos em lote
 interface BatchStep {
   tempId: string;
   file: File;
@@ -35,6 +35,7 @@ const Admin = () => {
   // Estado do Lote de Fotos (Carrossel)
   const [batchSteps, setBatchSteps] = useState<BatchStep[]>([]);
   const [isUploadingBatch, setIsUploadingBatch] = useState(false);
+  const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false); // NOVO: Estado de loading para o HEIC
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { faculdadesList } = useFaculdades();
@@ -46,32 +47,66 @@ const Admin = () => {
     uploadImage, 
     searchSteps, 
     clearSearch, 
-    createNewStep, 
     publishRoute,
     updateRoute,
     deleteRoute,
-    getStepsByIds
+    getStepsByIds,
+    createNewStep
   } = useAdminRoute();
 
-  const origensUnicas = Array.from(new Set(origens.map(p => p.name))).filter(Boolean) as string[];
-  const destinosUnicos = Array.from(new Set(destinos.map(p => p.name))).filter(Boolean) as string[];
+  const origensUnicas = Array.from(
+    new Map(origens.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
+  ) as string[];
 
-  // --- LÓGICA DO LOTE (CARROSSEL) ---
-  const handleMultipleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const destinosUnicos = Array.from(
+    new Map(destinos.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
+  ) as string[];
+
+  // --- LÓGICA DO LOTE COM CONVERSÃO DE PREVIEW HEIC ---
+  const handleMultipleFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
     
-    const newBatch = files.map(file => ({
-      tempId: Math.random().toString(36).substring(7),
-      file,
-      previewUrl: URL.createObjectURL(file),
-      name: "",
-      description: "",
-      is_origem: false
-    }));
+    setIsGeneratingPreviews(true); // Avisa a tela que está carregando
 
-    setBatchSteps(prev => [...prev, ...newBatch]);
-    if (fileInputRef.current) fileInputRef.current.value = ""; // Reseta o input
+    try {
+      const newBatch = await Promise.all(files.map(async (file) => {
+        let previewBlob: Blob | File = file;
+        
+        // Verifica se é foto da Apple
+        const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+        
+        if (isHeic) {
+          try {
+            // Converte rapidinho só para exibir no preview
+            const converted = await heic2any({
+              blob: file,
+              toType: "image/jpeg",
+              quality: 0.3 // Qualidade baixa para ser bem rápido
+            });
+            previewBlob = Array.isArray(converted) ? converted[0] : (converted as Blob);
+          } catch (err) {
+            console.error("Erro ao gerar preview HEIC:", err);
+          }
+        }
+
+        return {
+          tempId: Math.random().toString(36).substring(7),
+          file, // Guarda o original (alta qualidade) para fazer o upload pro Supabase depois
+          previewUrl: URL.createObjectURL(previewBlob), // Usa a imagem convertida para mostrar na tela
+          name: "",
+          description: "",
+          is_origem: false
+        };
+      }));
+
+      setBatchSteps(prev => [...prev, ...newBatch]);
+    } catch (error) {
+      console.error("Erro ao processar imagens:", error);
+    } finally {
+      setIsGeneratingPreviews(false);
+      if (fileInputRef.current) fileInputRef.current.value = ""; // Reseta o input
+    }
   };
 
   const updateBatchStep = (tempId: string, field: keyof BatchStep, value: any) => {
@@ -85,7 +120,6 @@ const Admin = () => {
   };
 
   const handleSaveBatch = async () => {
-    // Validação
     const hasEmptyDescription = batchSteps.some(step => !step.description.trim());
     if (hasEmptyDescription) {
       alert("Por favor, preencha a instrução de todas as fotos no carrossel antes de salvar.");
@@ -110,7 +144,6 @@ const Admin = () => {
         const createdStep = await createNewStep(newStepData);
         savedSteps.push({ ...newStepData, id: createdStep.id });
 
-        // Atualiza os seletores principais se o usuário definiu nomes nos cards
         if (bStep.name && bStep.name.trim() !== "") {
           if (bStep.is_origem) setOrigemNome(bStep.name);
           else setDestinoNome(bStep.name);
@@ -119,7 +152,7 @@ const Admin = () => {
 
       await fetchPoints();
       setStepsList(prev => [...prev, ...savedSteps]);
-      setBatchSteps([]); // Limpa o carrossel após salvar
+      setBatchSteps([]); 
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -294,8 +327,13 @@ const Admin = () => {
             onChange={handleMultipleFilesChange}
             style={{ display: 'none' }}
           />
-          <button className={styles.btnPrimary} onClick={() => fileInputRef.current?.click()}>
-            <ImagePlus size={18} /> Adicionar Fotos (Lote)
+          <button 
+            className={styles.btnPrimary} 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isGeneratingPreviews}
+            style={{ opacity: isGeneratingPreviews ? 0.7 : 1 }}
+          >
+            {isGeneratingPreviews ? "Processando HEIC..." : <><ImagePlus size={18} /> Adicionar Fotos (Lote)</>}
           </button>
         </div>
 
