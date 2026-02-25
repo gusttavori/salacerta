@@ -11,6 +11,14 @@ export function Splash() {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    let metaThemeColor = document.querySelector("meta[name=theme-color]");
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement("meta");
+      metaThemeColor.name = "theme-color";
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute("content", "#ffbb17");
+
     if (videoRef.current) {
       videoRef.current.playbackRate = 1.8; 
     }
@@ -19,7 +27,10 @@ export function Splash() {
       navigate("/busca");
     }, 4000); 
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      metaThemeColor.setAttribute("content", "#fffcf8"); 
+    };
   }, [navigate]);
 
   return (
@@ -42,12 +53,8 @@ export function Splash() {
 
       <motion.div
         className={styles.footer}
-        // Adicionamos um 'scale: 0.9' inicial
         initial={{ opacity: 0, y: 30, scale: 0.9 }}
-        // Ela cresce para o tamanho normal
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        // Diminuí o delay (de 0.4 para 0.3) para aparecer mais rápido.
-        // O ease "backOut" dá um efeito sutil de "pulo" ao terminar.
         transition={{ delay: 0.3, duration: 0.7, ease: "backOut" }}
       >
         <img

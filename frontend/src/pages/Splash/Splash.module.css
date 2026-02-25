@@ -8,6 +8,8 @@
   background-color: #ffbb17;
   position: relative;
   overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .logoContainer {
@@ -18,8 +20,6 @@
   width: 100%;
   padding: 0 24px;
   box-sizing: border-box;
-  /* Adicionei uma margem negativa inferior para subir o vídeo um pouco,
-     abrindo espaço visual para o footer brilhar mais */
   margin-bottom: 40px; 
 }
 
@@ -41,18 +41,14 @@
 
 .footer {
   position: absolute;
-  /* Subi de 40px para 60px para dar mais "ar" na parte inferior */
-  bottom: 60px;
+  bottom: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .logoFlxche {
-  /* Aumentei de 85px para 115px para ganhar destaque */
-  width: 120px;
-  /* Removi a opacidade 0.9 para ela ficar 100% sólida e nítida */
+  width: 180px;
   opacity: 1;
-  /* Opcional: uma sombra super suave para destacá-la do fundo amarelo */
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
 }
