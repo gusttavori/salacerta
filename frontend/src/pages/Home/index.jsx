@@ -6,7 +6,8 @@ import {
   MapPin,
   Footprints,
   Building2,
-  Info
+  Info,
+  Layers
 } from "lucide-react";
 import styles from "./Home.module.css";
 
@@ -21,12 +22,22 @@ import { RouteViewer } from "../../components/location/RouteViewer";
 export function Home() {
   const [faculdadeSel, setFaculdadeSel] = useState(null);
   const [origemSel, setOrigemSel] = useState(null);
+  const [moduloSel, setModuloSel] = useState(null);
   const [destinoSel, setDestinoSel] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const { faculdadesList, loading: loadingFaculdades } = useFaculdades();
   const { origens, destinos, loading: loadingPoints, error: pointsError } = useReferencePoints();
   const { route, stepsRoute, loading: loadingRoute, error: routeError, fetchRoute, clearRoute } = useRoute();
+
+  const modulosDisponiveis = [
+    "Módulo 1",
+    "Módulo 2",
+    "Módulo 3",
+    "Módulo 4",
+    "Administrativo",
+    "Todos os Locais"
+  ];
 
   const origensUnicas = Array.from(
     new Map(origens.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
@@ -35,29 +46,56 @@ export function Home() {
     new Map(destinos.filter(p => p.name).map(p => [p.name.trim().toLowerCase(), p.name.trim()])).values()
   );
 
+  const destinosFiltrados = useMemo(() => {
+    if (!moduloSel || moduloSel === "Todos os Locais") return destinosUnicos;
+
+    return destinosUnicos.filter(nome => {
+      const n = nome.toLowerCase();
+      
+      if (moduloSel === "Administrativo") {
+        return n.includes("reitoria") || n.includes("coordenaç");
+      }
+      if (moduloSel === "Módulo 1") {
+        return n.includes("morfofuncional") || n.includes("habilidades 02") || n.includes("habilidades 01") || n.includes("práticas cirúrgicas") || n.includes("simulação") || n.includes("labt") || n.includes("labcast") || n.includes("map") || n.match(/\bnap\b/) || (n.includes("anatomia") && !n.includes("veterinári")) || n.includes("peças úmidas") || n.includes("psicopedagógico") || n.includes("banheiro");
+      }
+      if (moduloSel === "Módulo 2") {
+        return n.includes("tutorial") || n.includes("atendimento") || (n.includes("biblioteca") && !n.includes("4"));
+      }
+      if (moduloSel === "Módulo 3") {
+        if (n.includes("reitoria")) return false; 
+        return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("professores") || n.includes("aula 01") || n.includes("aula 02") || n.includes("aula 03") || n.includes("aula 04") || n.includes("banheiro");
+      }
+      if (moduloSel === "Módulo 4") {
+        return n.match(/\b1[0-2]\d\b/) || n.match(/\b4[0-1]\d\b/) || n.includes("cantina") || n.includes("informática 01") || n.includes("informática 02") || n.includes("odontológica") || n.includes("odontologia") || n.includes("esterilização") || n.includes("servidor") || n.includes("redes") || n.includes("auditório") || n.includes("anatomofuncional") || n.includes("análises") || n.includes("expurgo") || n.includes("reagentes") || n.includes("tempo integral") || n.includes("civil") || n.includes("quadra") || n.includes("fisiologia") || n.includes("veterinário") || n.includes("química") || n.includes("estéril") || n.includes("biologia") || n.includes("dml") || n.includes("dietéticas") || n.includes("clínica") || (n.includes("biblioteca") && n.includes("4")) || n.includes("recepção") || n.includes("banheiro");
+      }
+      return false;
+    });
+  }, [destinosUnicos, moduloSel]);
+
   const destinosAgrupados = useMemo(() => {
     const grupos = {
       "Salas de Aula": [],
-      "Laboratórios": [],
-      "Administrativo": [],
+      "Laboratórios & Clínicas": [],
+      "Administrativo & Apoio": [],
       "Outros Locais": []
     };
 
-    destinosUnicos.forEach(nome => {
+    destinosFiltrados.forEach(nome => {
       const nomeLower = nome.toLowerCase();
-      if (nomeLower.includes("sala")) {
+      
+      if (nomeLower.includes("sala") || nomeLower.match(/\b1[0-2]\d\b/) || nomeLower.match(/\b4[0-1]\d\b/)) {
         grupos["Salas de Aula"].push(nome);
-      } else if (nomeLower.includes("lab") || nomeLower.includes("informática")) {
-        grupos["Laboratórios"].push(nome);
-      } else if (nomeLower.includes("coordenação") || nomeLower.includes("diretoria") || nomeLower.includes("secretaria") || nomeLower.includes("atendimento")) {
-        grupos["Administrativo"].push(nome);
+      } else if (nomeLower.includes("lab") || nomeLower.includes("informática") || nomeLower.includes("morfofuncional") || nomeLower.includes("habilidades") || nomeLower.includes("simulação") || nomeLower.includes("clínica") || nomeLower.includes("anatomia") || nomeLower.includes("dietéticas")) {
+        grupos["Laboratórios & Clínicas"].push(nome);
+      } else if (nomeLower.includes("coordenaç") || nomeLower.includes("diretoria") || nomeLower.includes("secretaria") || nomeLower.includes("atendimento") || nomeLower.includes("reitoria") || nomeLower.includes("recepção") || nomeLower.match(/\bnap\b/) || nomeLower.includes("map") || nomeLower.includes("psicopedagógico")) {
+        grupos["Administrativo & Apoio"].push(nome);
       } else {
         grupos["Outros Locais"].push(nome);
       }
     });
 
     return Object.entries(grupos).filter(([_, itens]) => itens.length > 0);
-  }, [destinosUnicos]);
+  }, [destinosFiltrados]);
 
   function toggleDropdown(nome) {
     setActiveDropdown((prev) => (prev === nome ? null : nome));
@@ -66,6 +104,7 @@ export function Home() {
   function handleSelectFaculdade(item) {
     setFaculdadeSel(item);
     setOrigemSel(null);
+    setModuloSel(null);
     setDestinoSel(null);
     setActiveDropdown(null);
     clearRoute();
@@ -73,6 +112,14 @@ export function Home() {
 
   function handleSelectOrigem(nome) {
     setOrigemSel(nome);
+    setModuloSel(null);
+    setDestinoSel(null);
+    setActiveDropdown(null);
+    clearRoute();
+  }
+
+  function handleSelectModulo(nome) {
+    setModuloSel(nome);
     setDestinoSel(null);
     setActiveDropdown(null);
     clearRoute();
@@ -92,7 +139,7 @@ export function Home() {
 
   const textoBotao = loadingRoute 
     ? "Buscando trajeto..." 
-    : (!faculdadeSel || !origemSel || !destinoSel ? "Selecione a rota" : "Localizar Sala");
+    : (!faculdadeSel || !origemSel || !moduloSel || !destinoSel ? "Selecione a rota" : "Localizar Sala");
 
   return (
     <div className={styles.container}>
@@ -114,7 +161,6 @@ export function Home() {
 
       <div className={styles.formContainer}>
         
-        {/* DROPDOWN FACULDADE */}
         <div className={styles.dropdownContainer}>
           <div
             className={`${styles.dropdownTrigger} ${activeDropdown === "faculdade" ? styles.active : ""}`}
@@ -141,7 +187,6 @@ export function Home() {
           )}
         </div>
 
-        {/* DROPDOWN ORIGEM */}
         {faculdadeSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
@@ -172,8 +217,35 @@ export function Home() {
           </div>
         )}
 
-        {/* DROPDOWN DESTINO (COM CATEGORIAS) */}
         {origemSel != null && (
+          <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
+            <div
+              className={`${styles.dropdownTrigger} ${activeDropdown === "modulo" ? styles.active : ""}`}
+              onClick={() => toggleDropdown("modulo")}
+            >
+              <div className={styles.triggerContent}>
+                <Layers size={20} color={moduloSel ? "#111" : "#666"} />
+                <span className={moduloSel ? styles.textoSelecionado : styles.textoTrigger}>
+                  {moduloSel ? moduloSel : "Em qual módulo fica a sala?"}
+                </span>
+              </div>
+              <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "modulo" ? styles.rotate : ""}`} />
+            </div>
+
+            {activeDropdown === "modulo" && (
+              <div className={styles.dropdownLista} role="listbox">
+                {modulosDisponiveis.map((mod, index) => (
+                  <div key={index} className={styles.dropdownItem} onClick={() => handleSelectModulo(mod)}>
+                    <span>{mod}</span>
+                    {moduloSel === mod && <Check size={18} color="#FFB300" />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {moduloSel != null && (
           <div className={`${styles.dropdownContainer} ${styles.fadeIn}`}>
             <div
               className={`${styles.dropdownTrigger} ${activeDropdown === "destino" ? styles.active : ""}`}
@@ -182,7 +254,7 @@ export function Home() {
               <div className={styles.triggerContent}>
                 <Footprints size={20} color={destinoSel ? "#111" : "#666"} />
                 <span className={destinoSel ? styles.textoSelecionado : styles.textoTrigger}>
-                  {destinoSel ? destinoSel : "Para onde quer ir?"}
+                  {destinoSel ? destinoSel : "Selecione a sala..."}
                 </span>
               </div>
               <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "destino" ? styles.rotate : ""}`} />
@@ -190,7 +262,7 @@ export function Home() {
 
             {activeDropdown === "destino" && (
               <div className={styles.dropdownLista} role="listbox">
-                {destinosAgrupados.length === 0 && <div className={styles.dropdownItem}>Nenhum destino cadastrado</div>}
+                {destinosAgrupados.length === 0 && <div className={styles.dropdownItem}>Nenhuma sala cadastrada neste módulo</div>}
                 
                 {destinosAgrupados.map(([categoria, salas]) => (
                   <div key={categoria}>
@@ -212,12 +284,11 @@ export function Home() {
       <button 
         className={styles.btnLocalizar} 
         onClick={handleLocalizar}
-        disabled={!faculdadeSel || !origemSel || !destinoSel || loadingRoute}
+        disabled={!faculdadeSel || !origemSel || !moduloSel || !destinoSel || loadingRoute}
       >
         {textoBotao}
       </button>
 
-      {/* --- BANNER INFORMATIVO (DICA SUTIL ABAIXO DO BOTÃO) --- */}
       <div className={styles.infoBanner}>
         <Info size={24} />
         <div>
