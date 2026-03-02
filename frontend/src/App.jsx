@@ -6,6 +6,7 @@ import { Splash } from "./pages/Splash";
 import { Home } from "./pages/Home";
 import Admin from "./pages/Admin";
 import { Login } from "./pages/Login";
+import { Privacidade } from "./pages/Privacidade"; // Importação adicionada aqui
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
@@ -25,7 +26,7 @@ function App() {
           <Route path="/" element={<Splash />} />
           <Route path="/busca" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          
+          <Route path="/privacidade" element={<Privacidade />} />
           <Route
             path="/admin"
             element={

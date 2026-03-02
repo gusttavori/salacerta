@@ -278,6 +278,27 @@
   padding-bottom: 20px;
 }
 
+.footerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0 20px;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.footerLink {
+  font-size: 11px;
+  color: #888;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footerLink:hover {
+  color: #111;
+  text-decoration: underline;
+}
+
 /* ANIMAÇÕES */
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }

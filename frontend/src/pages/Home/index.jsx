@@ -18,6 +18,7 @@ import { useFaculdades } from "../../hooks/useFaculdades";
 import { useReferencePoints } from "../../hooks/useReferencePoints";
 import { useRoute } from "../../hooks/useRoute";
 import { RouteViewer } from "../../components/location/RouteViewer";
+import { Link } from "react-router-dom"; // Importe o Link para navegação interna
 
 export function Home() {
   const [faculdadeSel, setFaculdadeSel] = useState(null);
@@ -308,7 +309,10 @@ export function Home() {
         <RouteViewer route={route} stepsRoute={stepsRoute} onClose={clearRoute} />
       )}
 
-      <img src={logoFlxche} alt="Flxche" className={styles.footerLogo} />
+      <footer className={styles.footerContainer}>
+        <img src={logoFlxche} alt="Flxche" className={styles.footerLogo} />
+        <Link to="/privacidade" className={styles.footerLink}>Privacidade</Link>
+      </footer>
     </div>
   );
 }
