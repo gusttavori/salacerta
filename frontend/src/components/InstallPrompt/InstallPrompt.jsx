@@ -4,37 +4,34 @@ import styles from './InstallPrompt.module.css';
 
 export function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true); // Começa true para não piscar na tela
+  const [isStandalone, setIsStandalone] = useState(true); 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
   useEffect(() => {
-    // 1. Verifica se já está instalado (Standalone mode)
     const isAppStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     setIsStandalone(isAppStandalone);
 
     if (isAppStandalone) return;
 
-    // 2. Verifica se o usuário já fechou esse aviso antes (não ser chato)
     const hasDismissed = localStorage.getItem('salaCerta_pwaDismissed');
     if (hasDismissed) return;
 
-    // 3. Detecta se é um iPhone/iPad
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
-    // Se for iOS, mostramos o nosso banner customizado após 3 segundos
+    // MUDANÇA AQUI: De 3000 para 1000 milissegundos (1 segundo) para o iOS
     if (isIosDevice) {
-      setTimeout(() => setIsVisible(true), 3000);
+      setTimeout(() => setIsVisible(true), 1000);
     }
 
-    // 4. Captura o evento nativo do Android/Chrome
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setTimeout(() => setIsVisible(true), 3000);
+      // MUDANÇA AQUI: De 3000 para 1000 milissegundos (1 segundo) para o Android
+      setTimeout(() => setIsVisible(true), 1000);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -46,10 +43,8 @@ export function InstallPrompt() {
 
   const handleInstallClick = async () => {
     if (isIOS) {
-      // Abre as instruções manuais para a Apple
       setShowIOSInstructions(true);
     } else if (deferredPrompt) {
-      // Dispara o prompt nativo do Android
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
@@ -74,7 +69,6 @@ export function InstallPrompt() {
         </button>
 
         {!showIOSInstructions ? (
-          // --- TELA INICIAL DO BANNER ---
           <div className={styles.content}>
             <div className={styles.iconCircle}>
               <Smartphone size={28} color="#111" />
@@ -88,7 +82,6 @@ export function InstallPrompt() {
             </button>
           </div>
         ) : (
-          // --- INSTRUÇÕES PARA IOS (SAFARI) ---
           <div className={styles.iosInstructions}>
             <h3>Instalar no iPhone</h3>
             <p>A Apple exige instalação manual. Siga os passos:</p>
