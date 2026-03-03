@@ -18,7 +18,8 @@ import { useFaculdades } from "../../hooks/useFaculdades";
 import { useReferencePoints } from "../../hooks/useReferencePoints";
 import { useRoute } from "../../hooks/useRoute";
 import { RouteViewer } from "../../components/location/RouteViewer";
-import { Link } from "react-router-dom"; // Importe o Link para navegação interna
+import { Link } from "react-router-dom"; 
+import { InstallPrompt } from "../../components/InstallPrompt/InstallPrompt"; 
 
 export function Home() {
   const [faculdadeSel, setFaculdadeSel] = useState(null);
@@ -67,7 +68,10 @@ export function Home() {
         return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("professores") || n.includes("aula 01") || n.includes("aula 02") || n.includes("aula 03") || n.includes("aula 04") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 4") {
-        return n.match(/\b1[0-2]\d\b/) || n.match(/\b4[0-1]\d\b/) || n.includes("cantina") || n.includes("informática 01") || n.includes("informática 02") || n.includes("odontológica") || n.includes("odontologia") || n.includes("esterilização") || n.includes("servidor") || n.includes("redes") || n.includes("auditório") || n.includes("anatomofuncional") || n.includes("análises") || n.includes("expurgo") || n.includes("reagentes") || n.includes("tempo integral") || n.includes("civil") || n.includes("quadra") || n.includes("fisiologia") || n.includes("veterinário") || n.includes("química") || n.includes("estéril") || n.includes("biologia") || n.includes("dml") || n.includes("dietéticas") || n.includes("clínica") || (n.includes("biblioteca") && n.includes("4")) || n.includes("recepção") || n.includes("banheiro");
+        // Regra expandida para pegar tudo do Andar 1 (101 a 118) e Andar 2 (121 a 129), além das salas 400+
+        const isSalaMod4 = n.match(/\b10[1-9]\b/) || n.match(/\b11[0-8]\b/) || n.match(/\b12[1-9]\b/) || n.match(/\b40[1-9]\b/) || n.match(/\b41[0-3]\b/);
+        
+        return isSalaMod4 || n.includes("cantina") || n.includes("informática 01") || n.includes("informática 02") || n.includes("odontológica") || n.includes("odontologia") || n.includes("esterilização") || n.includes("servidor") || n.includes("redes") || n.includes("auditório") || n.includes("anatomofuncional") || n.includes("análises") || n.includes("expurgo") || n.includes("reagentes") || n.includes("tempo integral") || n.includes("civil") || n.includes("quadra") || n.includes("fisiologia") || n.includes("veterinário") || n.includes("química") || n.includes("estéril") || n.includes("biologia") || n.includes("dml") || n.includes("dietéticas") || n.includes("clínica") || (n.includes("biblioteca") && n.includes("4")) || n.includes("recepção") || n.includes("banheiro") || n.includes("multi disciplinar");
       }
       return false;
     });
@@ -86,7 +90,7 @@ export function Home() {
       
       if (nomeLower.includes("sala") || nomeLower.match(/\b1[0-2]\d\b/) || nomeLower.match(/\b4[0-1]\d\b/)) {
         grupos["Salas de Aula"].push(nome);
-      } else if (nomeLower.includes("lab") || nomeLower.includes("informática") || nomeLower.includes("morfofuncional") || nomeLower.includes("habilidades") || nomeLower.includes("simulação") || nomeLower.includes("clínica") || nomeLower.includes("anatomia") || nomeLower.includes("dietéticas")) {
+      } else if (nomeLower.includes("lab") || nomeLower.includes("informática") || nomeLower.includes("morfofuncional") || nomeLower.includes("habilidades") || nomeLower.includes("simulação") || nomeLower.includes("clínica") || nomeLower.includes("anatomia") || nomeLower.includes("dietéticas") || nomeLower.includes("fisiologia")) {
         grupos["Laboratórios & Clínicas"].push(nome);
       } else if (nomeLower.includes("coordenaç") || nomeLower.includes("diretoria") || nomeLower.includes("secretaria") || nomeLower.includes("atendimento") || nomeLower.includes("reitoria") || nomeLower.includes("recepção") || nomeLower.match(/\bnap\b/) || nomeLower.includes("map") || nomeLower.includes("psicopedagógico")) {
         grupos["Administrativo & Apoio"].push(nome);
@@ -313,6 +317,8 @@ export function Home() {
         <img src={logoFlxche} alt="Flxche" className={styles.footerLogo} />
         <Link to="/privacidade" className={styles.footerLink}>Privacidade</Link>
       </footer>
+      
+      <InstallPrompt />
     </div>
   );
 }
