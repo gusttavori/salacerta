@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react';
 import { X, Download, Share, PlusSquare, Smartphone } from 'lucide-react';
 import styles from './InstallPrompt.module.css';
 
+// --- A MÁGICA: O APANHADOR GLOBAL ---
+// Ele escuta o navegador desde o milissegundo zero (na Splash)
+// e guarda o convite de instalação para usarmos depois na Home.
+let globalDeferredPrompt = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    globalDeferredPrompt = e;
+  });
+}
+
 export function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true); 
@@ -22,15 +33,21 @@ export function InstallPrompt() {
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
-    // MUDANÇA AQUI: De 3000 para 1000 milissegundos (1 segundo) para o iOS
     if (isIosDevice) {
+      setTimeout(() => setIsVisible(true), 1000);
+    }
+
+    // --- RECUPERANDO O EVENTO DA SPLASH ---
+    // Se o evento foi disparado lá na Splash, nós pegamos ele aqui na Home
+    if (globalDeferredPrompt) {
+      setDeferredPrompt(globalDeferredPrompt);
       setTimeout(() => setIsVisible(true), 1000);
     }
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      globalDeferredPrompt = e; // Atualiza o global também
       setDeferredPrompt(e);
-      // MUDANÇA AQUI: De 3000 para 1000 milissegundos (1 segundo) para o Android
       setTimeout(() => setIsVisible(true), 1000);
     };
 
@@ -50,7 +67,9 @@ export function InstallPrompt() {
       if (outcome === 'accepted') {
         setIsVisible(false);
       }
+      // Limpa os prompts após o uso
       setDeferredPrompt(null);
+      globalDeferredPrompt = null; 
     }
   };
 
