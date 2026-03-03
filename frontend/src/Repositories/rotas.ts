@@ -43,7 +43,8 @@ export const rotas = {
       .eq("faculdade", faculdadeId)
       .eq("origem_id", origemId)
       .eq("destino_id", destinoId)
-      .single(); 
+      .limit(1)          // <-- Previne erros se houver rotas duplicadas no banco
+      .maybeSingle();    // <-- Previne erros se a rota ainda não existir
 
     if (error) {
       if (error.code === 'PGRST116') return null; 
