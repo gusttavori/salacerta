@@ -7,7 +7,8 @@ import {
   Footprints,
   Building2,
   Info,
-  Layers
+  Layers,
+  SearchX 
 } from "lucide-react";
 import styles from "./Home.module.css";
 
@@ -58,18 +59,18 @@ export function Home() {
         return n.includes("reitoria") || n.includes("coordenaç");
       }
       if (moduloSel === "Módulo 1") {
-        return n.includes("morfofuncional") || n.includes("habilidades") || n.includes("práticas cirúrgicas") || n.includes("simulação") || n.includes("labt") || n.includes("labcast") || n.includes("map") || n.match(/\bnap\b/) || (n.includes("anatomia") && !n.includes("veterinári")) || n.includes("peças úmidas") || n.includes("psicopedagógico") || n.includes("banheiro");
+        return n.includes("morfofuncional") || n.includes("habilidades") || n.includes("práticas") || n.includes("simulação") || n.includes("labt") || n.includes("labcast") || n.includes("map") || n.match(/\bnap\b/) || (n.includes("anatomia") && !n.includes("veterinári")) || n.includes("peças") || n.includes("psicopedagógico") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 2") {
         return n.includes("tutorial") || n.includes("atendimento") || n.includes("metodologia") || (n.includes("biblioteca") && !n.includes("4"));
       }
       if (moduloSel === "Módulo 3") {
         if (n.includes("reitoria")) return false; 
-        return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("professores") || n.includes("aula 01") || n.includes("aula 02") || n.includes("aula 03") || n.includes("aula 04") || n.includes("banheiro");
+        return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("professores") || n.includes("aula") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 4") {
         const isSalaMod4 = n.match(/\b10[1-9]\b/) || n.match(/\b11[0-8]\b/) || n.match(/\b12[1-9]\b/) || n.match(/\b40[1-9]\b/) || n.match(/\b41[0-3]\b/);
-        return isSalaMod4 || n.includes("cantina") || n.includes("informática 01") || n.includes("informática 02") || n.includes("odontológica") || n.includes("odontologia") || n.includes("esterilização") || n.includes("servidor") || n.includes("redes") || n.includes("auditório") || n.includes("anatomofuncional") || n.includes("análises") || n.includes("expurgo") || n.includes("reagentes") || n.includes("tempo integral") || n.includes("civil") || n.includes("quadra") || n.includes("fisiologia") || n.includes("veterinário") || n.includes("química") || n.includes("estéril") || n.includes("biologia") || n.includes("dml") || n.includes("dietéticas") || n.includes("clínica") || (n.includes("biblioteca") && n.includes("4")) || n.includes("recepção") || n.includes("banheiro") || n.includes("multi disciplinar");
+        return isSalaMod4 || n.includes("cantina") || n.includes("informática") || n.includes("odontologia") || n.includes("esterilização") || n.includes("servidor") || n.includes("redes") || n.includes("auditório") || n.includes("anatomofuncional") || n.includes("análises") || n.includes("expurgo") || n.includes("reagentes") || n.includes("tempo integral") || n.includes("civil") || n.includes("quadra") || n.includes("fisiologia") || n.includes("veterinário") || n.includes("química") || n.includes("biologia") || n.includes("dml") || n.includes("dietéticas") || n.includes("clínica") || (n.includes("biblioteca") && n.includes("4")) || n.includes("recepção") || n.includes("banheiro") || n.includes("multi disciplinar");
       }
       return false;
     });
@@ -155,15 +156,7 @@ export function Home() {
         <h2 className={styles.pergunta}>Onde deseja ir?</h2>
       </div>
 
-      {pointsError && (
-        <div className={styles.errorToast}>
-          <AlertCircle size={20} />
-          <span>{pointsError}</span>
-        </div>
-      )}
-
       <div className={styles.formContainer}>
-        
         {/* DROPDOWN FACULDADE */}
         <div className={styles.dropdownContainer}>
           <div
@@ -173,13 +166,13 @@ export function Home() {
             <div className={styles.triggerContent}>
               <Building2 size={20} color={faculdadeSel ? "#111" : "#666"} />
               <span className={faculdadeSel ? styles.textoSelecionado : styles.textoTrigger}>
-                {faculdadeSel ? faculdadeSel.name : (loadingFaculdades ? "Carregando..." : "Selecione sua faculdade")}
+                {faculdadeSel ? faculdadeSel.name : "Selecione sua faculdade"}
               </span>
             </div>
             <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "faculdade" ? styles.rotate : ""}`} />
           </div>
 
-          {activeDropdown === "faculdade" && !loadingFaculdades && (
+          {activeDropdown === "faculdade" && (
             <div className={styles.dropdownLista} role="listbox">
               {faculdadesList.map((item) => (
                 <div key={item.id} className={styles.dropdownItem} onClick={() => handleSelectFaculdade(item)}>
@@ -201,16 +194,14 @@ export function Home() {
               <div className={styles.triggerContent}>
                 <MapPin size={20} color={origemSel ? "#111" : "#666"} />
                 <span className={origemSel ? styles.textoSelecionado : styles.textoTrigger}>
-                  {origemSel ? origemSel : (loadingPoints ? "Carregando locais..." : "Onde você está?")}
+                  {origemSel ? origemSel : "Onde você está?"}
                 </span>
               </div>
               <ChevronDown size={20} className={`${styles.chevron} ${activeDropdown === "origem" ? styles.rotate : ""}`} />
             </div>
 
-            {activeDropdown === "origem" && !loadingPoints && (
+            {activeDropdown === "origem" && (
               <div className={styles.dropdownLista} role="listbox">
-                {origensUnicas.length === 0 && <div className={styles.dropdownItem}>Nenhuma origem cadastrada</div>}
-                
                 {origensUnicas.map((nome, index) => (
                   <div key={index} className={styles.dropdownItem} onClick={() => handleSelectOrigem(nome)}>
                     <span>{nome}</span>
@@ -288,6 +279,17 @@ export function Home() {
         )}
       </div>
 
+      {/* ALERTA DE ROTA NÃO ENCONTRADA */}
+      {routeError && (
+        <div className={styles.routeErrorBox}>
+          <SearchX size={24} color="#d32f2f" />
+          <div>
+            <strong>Trajeto não mapeado</strong>
+            <p>Ainda estamos adicionando rotas para esta sala. Tente outro local!</p>
+          </div>
+        </div>
+      )}
+
       <button 
         className={styles.btnLocalizar} 
         onClick={handleLocalizar}
@@ -300,14 +302,14 @@ export function Home() {
         <Info size={24} />
         <div>
           <strong>Não encontrou sua sala? 🚧</strong>
-          <p>Ainda estamos mapeando o campus! Novas rotas são adicionadas continuamente ao sistema.</p>
+          <p>Ainda estamos mapeando o campus! Novas rotas são adicionadas continuamente.</p>
         </div>
       </div>
 
-      {routeError && (
-        <div className={styles.errorBox}>
+      {pointsError && (
+        <div className={styles.errorToast}>
           <AlertCircle size={20} />
-          <span>{routeError}</span>
+          <span>{pointsError}</span>
         </div>
       )}
 

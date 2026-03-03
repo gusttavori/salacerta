@@ -17,8 +17,13 @@ export function useRoute() {
     setStepsRoute([]);
 
     try {
+      // LOG PARA DEBUG: Veja no console se os nomes batem com o banco
+      console.log("🔍 Buscando rota:", { faculdadeId, origemId, destinoId });
+
       const routeData = await rotas.findByPath(faculdadeId, origemId, destinoId);
       
+      console.log("✅ Resposta do banco:", routeData);
+
       if (!routeData) {
         setError("Nenhuma rota encontrada para este trajeto.");
         return;
@@ -32,7 +37,7 @@ export function useRoute() {
       }
 
     } catch (err) {
-      console.error(err);
+      console.error("❌ Erro no fetchRoute:", err);
       setError("Erro ao buscar a rota. Tente novamente mais tarde.");
     } finally {
       setLoading(false);

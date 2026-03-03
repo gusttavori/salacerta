@@ -37,16 +37,18 @@ export const rotas = {
   },
 
   async findByPath(faculdadeId: string | number, origemId: string | number, destinoId: string | number) {
+    // Trocamos .eq por .ilike para ignorar Diferenças entre Maiúsculas e Minúsculas
     const { data, error } = await supabase
       .from("rotas")
       .select("*")
       .eq("faculdade", faculdadeId)
-      .eq("origem_id", origemId)
-      .eq("destino_id", destinoId)
-      .limit(1)          // <-- Previne erros se houver rotas duplicadas no banco
-      .maybeSingle();    // <-- Previne erros se a rota ainda não existir
+      .ilike("origem_id", `${origemId}`) 
+      .ilike("destino_id", `${destinoId}`)
+      .limit(1) 
+      .maybeSingle(); 
 
     if (error) {
+      console.error("Erro Supabase:", error);
       if (error.code === 'PGRST116') return null; 
       throw error;
     }
