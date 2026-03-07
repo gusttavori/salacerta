@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X, Star, CheckCircle, AlertTriangle } from "lucide-react";
 import { reviews } from "../../Repositories/reviews";
 
+const otimizarImagem = (urlOriginal) => {
+  if (!urlOriginal) return '';
+  const urlLimpa = urlOriginal.replace('https://', '');
+  return `https://wsrv.nl/?url=${urlLimpa}&w=600&q=70&output=webp`;
+};
+
 export function RouteViewer({ route, stepsRoute, onClose }) {
   const [passoAtual, setPassoAtual] = useState(0);
   const [showChegouAlert, setShowChegouAlert] = useState(false);
@@ -99,8 +105,9 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
         <div style={imageWrapper}>
           {passo?.image ? (
             <img
-              src={passo.image}
+              src={otimizarImagem(passo.image)}
               alt={`Passo ${passoAtual + 1}`}
+              loading="lazy"
               style={imageStyle}
               onError={(e) => {
                 console.error("Falha ao carregar imagem no link:", e.target.src);
@@ -294,7 +301,7 @@ const carouselContainer = {
 
 const headerStyle = {
   display: "flex",
-  justifyContent: "space-between",
+  justify-content: "space-between",
   alignItems: "center",
   padding: "16px 24px",
   backgroundColor: "#ffffff",
