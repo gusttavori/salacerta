@@ -62,11 +62,13 @@ export function Home() {
         return n.includes("morfofuncional") || n.includes("habilidades") || n.includes("práticas") || n.includes("simulação") || n.includes("labt") || n.includes("labcast") || n.includes("map") || n.match(/\bnap\b/) || (n.includes("anatomia") && !n.includes("veterinári")) || n.includes("peças") || n.includes("psicopedagógico") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 2") {
-        return n.includes("tutorial") || n.includes("atendimento") || n.includes("metodologia") || (n.includes("biblioteca") && !n.includes("4"));
+        // Professores adicionado aqui. Metodologia removida.
+        return n.includes("tutorial") || n.includes("atendimento") || n.includes("professores") || (n.includes("biblioteca") && !n.includes("4"));
       }
       if (moduloSel === "Módulo 3") {
+        // Metodologia mantida aqui. Professores removida.
         if (n.includes("reitoria")) return false; 
-        return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("professores") || n.includes("aula") || n.includes("banheiro");
+        return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("aula") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 4") {
         const isSalaMod4 = n.match(/\b10[1-9]\b/) || n.match(/\b11[0-8]\b/) || n.match(/\b12[1-9]\b/) || n.match(/\b40[1-9]\b/) || n.match(/\b41[0-3]\b/);
