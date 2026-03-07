@@ -5,7 +5,7 @@ import { reviews } from "../../Repositories/reviews";
 const otimizarImagem = (urlOriginal) => {
   if (!urlOriginal) return '';
   const urlLimpa = urlOriginal.replace('https://', '');
-  return `https://wsrv.nl/?url=${urlLimpa}&w=600&q=70&output=webp`;
+  return `https://wsrv.nl/?url=${urlLimpa}&w=500&q=60&output=webp`;
 };
 
 export function RouteViewer({ route, stepsRoute, onClose }) {
@@ -14,6 +14,7 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [problema, setProblema] = useState("");
+  const [imgCarregada, setImgCarregada] = useState(false);
   
   const [foundRoom, setFoundRoom] = useState("não");
   const [rating, setRating] = useState(0);
@@ -24,6 +25,21 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
   const totalPassos = stepsRoute?.length || 0;
   const passo = stepsRoute?.[passoAtual];
   const isUltimoPasso = passoAtual === totalPassos - 1 && totalPassos > 0;
+
+  useEffect(() => {
+    setImgCarregada(false);
+  }, [passoAtual]);
+
+  useEffect(() => {
+    if (stepsRoute && stepsRoute.length > 0) {
+      stepsRoute.forEach((s) => {
+        if (s.image) {
+          const img = new Image();
+          img.src = otimizarImagem(s.image);
+        }
+      });
+    }
+  }, [stepsRoute]);
 
   useEffect(() => {
     let timer;
@@ -71,7 +87,7 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
         onClose();
       }, 3000);
     } catch (err) {
-      console.error("Erro ao enviar feedback.");
+      console.error(err);
     }
   }
 
@@ -104,15 +120,19 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
 
         <div style={imageWrapper}>
           {passo?.image ? (
-            <img
-              src={otimizarImagem(passo.image)}
-              alt={`Passo ${passoAtual + 1}`}
-              loading="lazy"
-              style={imageStyle}
-              onError={(e) => {
-                console.error("Falha ao carregar imagem no link:", e.target.src);
-              }}
-            />
+            <>
+              {!imgCarregada && (
+                <div style={loadingOverlayStyle}>
+                  <span style={{ color: "#FFB300", fontSize: "0.95rem", fontWeight: "600" }}>Carregando imagem...</span>
+                </div>
+              )}
+              <img
+                src={otimizarImagem(passo.image)}
+                alt={`Passo ${passoAtual + 1}`}
+                style={{ ...imageStyle, display: imgCarregada ? "block" : "none" }}
+                onLoad={() => setImgCarregada(true)}
+              />
+            </>
           ) : (
             <div style={placeholderStyle}>Imagem não disponível</div>
           )}
@@ -301,7 +321,7 @@ const carouselContainer = {
 
 const headerStyle = {
   display: "flex",
-  justifyContent: "space-between", // <-- Correção exata aqui (sem o hífen e com o C maiúsculo)
+  justifyContent: "space-between",
   alignItems: "center",
   padding: "16px 24px",
   backgroundColor: "#ffffff",
@@ -329,11 +349,20 @@ const imageWrapper = {
   overflow: "hidden"
 };
 
+const loadingOverlayStyle = {
+  position: "absolute",
+  top: 0, left: 0, right: 0, bottom: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#111",
+  zIndex: 1
+};
+
 const imageStyle = {
   width: "100%",
   height: "100%",
-  objectFit: "cover",
-  display: "block"
+  objectFit: "cover"
 };
 
 const placeholderStyle = {
