@@ -298,13 +298,13 @@ export function Home() {
         {textoBotao}
       </button>
 
-      {/* SEÇÃO DE TEXTO PARA SEO E ADSENSE */}
-      <div className={styles.seoContent}>
-        <h3>O que é o Sala Certa?</h3>
+      {/* SEÇÃO DE TEXTO PARA SEO E ADSENSE (Discreta) */}
+      <details className={styles.seoAccordion}>
+        <summary>Como o Sala Certa funciona?</summary>
         <p>
           O Sala Certa é a principal plataforma digital de navegação universitária, desenvolvida para ajudar estudantes, professores e visitantes a encontrarem rapidamente laboratórios, auditórios, clínicas e salas de aula dentro do campus. Selecione sua localização atual e seu destino para receber instruções passo a passo com imagens detalhadas do trajeto.
         </p>
-      </div>
+      </details>
 
       <div className={styles.infoBanner}>
         <Info size={24} />

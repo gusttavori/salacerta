@@ -5,7 +5,7 @@ import styles from "./Institucional.module.css";
 export function Sobre() {
   return (
     <div className={styles.container}>
-      <Link to="/" className={styles.backButton}>
+      <Link to="/busca" className={styles.backButton}>
         <ArrowLeft size={20} /> Voltar para o início
       </Link>
 

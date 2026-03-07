@@ -2,12 +2,6 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X, Star, CheckCircle, AlertTriangle } from "lucide-react";
 import { reviews } from "../../Repositories/reviews";
 
-const otimizarImagem = (urlOriginal) => {
-  if (!urlOriginal) return '';
-  const urlLimpa = urlOriginal.replace('https://', '');
-  return `https://wsrv.nl/?url=${urlLimpa}&w=500&q=60&output=webp`;
-};
-
 export function RouteViewer({ route, stepsRoute, onClose }) {
   const [passoAtual, setPassoAtual] = useState(0);
   const [showChegouAlert, setShowChegouAlert] = useState(false);
@@ -35,7 +29,7 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
       stepsRoute.forEach((s) => {
         if (s.image) {
           const img = new Image();
-          img.src = otimizarImagem(s.image);
+          img.src = s.image;
         }
       });
     }
@@ -127,7 +121,7 @@ export function RouteViewer({ route, stepsRoute, onClose }) {
                 </div>
               )}
               <img
-                src={otimizarImagem(passo.image)}
+                src={passo.image}
                 alt={`Passo ${passoAtual + 1}`}
                 style={{ ...imageStyle, display: imgCarregada ? "block" : "none" }}
                 onLoad={() => setImgCarregada(true)}

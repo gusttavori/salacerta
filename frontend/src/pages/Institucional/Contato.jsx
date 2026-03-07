@@ -5,7 +5,7 @@ import styles from "./Institucional.module.css";
 export function Contato() {
   return (
     <div className={styles.container}>
-      <Link to="/" className={styles.backButton}>
+      <Link to="/busca" className={styles.backButton}>
         <ArrowLeft size={20} /> Voltar para o início
       </Link>
 
@@ -23,7 +23,7 @@ export function Contato() {
         <div className={styles.contactBox}>
           <Mail size={32} color="#ffb300" style={{ marginBottom: "8px" }} />
           <p className={styles.text} style={{ marginBottom: "0" }}>Envie um e-mail diretamente para nossa equipe:</p>
-          <a href="mailto:contato@flxche.com" className={styles.contactEmail}>
+          <a href="mailto:flxchecompany@gmail.com" className={styles.contactEmail}>
             contato@flxche.com
           </a>
         </div>
