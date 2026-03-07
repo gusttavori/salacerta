@@ -24,7 +24,7 @@ export function Contato() {
           <Mail size={32} color="#ffb300" style={{ marginBottom: "8px" }} />
           <p className={styles.text} style={{ marginBottom: "0" }}>Envie um e-mail diretamente para nossa equipe:</p>
           <a href="mailto:flxchecompany@gmail.com" className={styles.contactEmail}>
-            contato@flxche.com
+            flxchecompany@gmail.com
           </a>
         </div>
 
