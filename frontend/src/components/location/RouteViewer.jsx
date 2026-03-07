@@ -301,7 +301,7 @@ const carouselContainer = {
 
 const headerStyle = {
   display: "flex",
-  justify-content: "space-between",
+  justifyContent: "space-between", // <-- Correção exata aqui (sem o hífen e com o C maiúsculo)
   alignItems: "center",
   padding: "16px 24px",
   backgroundColor: "#ffffff",
