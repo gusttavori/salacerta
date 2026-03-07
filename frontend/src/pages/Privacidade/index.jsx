@@ -52,7 +52,7 @@ export function Privacidade() {
 
         <section>
           <h2>7. Contato</h2>
-          <p>Se você tiver alguma dúvida sobre como lidamos com dados do usuário e informações pessoais, sinta-se à vontade para entrar em contato conosco através do e-mail: <strong>contato@flxche.com</strong>.</p>
+          <p>Se você tiver alguma dúvida sobre como lidamos com dados do usuário e informações pessoais, sinta-se à vontade para entrar em contato conosco através do e-mail: <strong>flxchecompany@gmail.com</strong>.</p>
           <p><em>Esta política é efetiva a partir de março de 2026.</em></p>
         </section>
       </main>

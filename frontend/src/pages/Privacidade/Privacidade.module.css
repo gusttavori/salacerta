@@ -1,21 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap");
+
 .container {
   min-height: 100vh;
-  background-color: #f8f9fa;
-  padding: 40px 20px;
+  background-color: #fffcf8; /* Mantém a mesma cor de fundo da Home */
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  font-family: "Montserrat", sans-serif;
+  box-sizing: border-box;
 }
 
-.card {
-  max-width: 800px;
-  width: 100%;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-
+/* O botão de voltar alinhado ao topo e à esquerda do conteúdo */
 .backBtn {
   display: flex;
   align-items: center;
@@ -23,66 +19,108 @@
   background: none;
   border: none;
   color: #666;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: inherit;
   cursor: pointer;
-  margin-bottom: 30px;
-  transition: color 0.2s;
+  margin-bottom: 24px;
   padding: 0;
+  transition: color 0.2s ease;
+  width: 100%;
+  max-width: 800px;
+  justify-content: flex-start;
 }
 
 .backBtn:hover {
-  color: #FFB300; /* Cor de destaque do Sala Certa */
+  color: #ffb300; 
+}
+
+/* O "Card" branco que segura o texto */
+.content {
+  max-width: 800px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 
 .content h1 {
   font-size: 2rem;
-  color: #1a1a1a;
-  margin-bottom: 10px;
-  border-left: 5px solid #FFB300; /* Detalhe lateral em amarelo */
-  padding-left: 15px;
+  color: #111;
+  margin-top: 0;
+  margin-bottom: 24px;
+  border-left: 5px solid #ffb300; 
+  padding-left: 16px;
+  line-height: 1.2;
+}
+
+.content section {
+  margin-top: 32px;
+}
+
+.content h2 {
+  font-size: 1.25rem;
+  color: #222;
+  margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .content p {
-  color: #444;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+}
+
+.content ul {
+  padding-left: 24px;
+  margin-bottom: 24px;
+}
+
+.content li {
+  margin-bottom: 12px;
+  color: #555;
   line-height: 1.6;
-  margin-bottom: 25px;
+  font-size: 0.95rem;
 }
 
-.section {
-  margin-top: 35px;
+.content strong {
+  color: #333;
+  font-weight: 600;
 }
 
-.section h2 {
-  font-size: 1.25rem;
-  color: #1a1a1a;
-  margin-bottom: 15px;
+/* Estilo para os links do AdSense dentro do texto */
+.content a {
+  color: #ffb300;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
 }
 
-.section ul {
-  padding-left: 20px;
-  margin-bottom: 20px;
+.content a:hover {
+  color: #e6a200;
+  text-decoration: underline;
 }
 
-.section li {
-  margin-bottom: 10px;
-  color: #444;
-}
-
-.footer {
-  margin-top: 50px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #888;
-}
-
+/* Responsividade para telas de celular */
 @media (max-width: 600px) {
-  .card {
-    padding: 25px;
+  .container {
+    padding: 24px 16px;
+  }
+  
+  .content {
+    padding: 24px;
   }
   
   .content h1 {
     font-size: 1.5rem;
+    padding-left: 12px;
+    border-left-width: 4px;
+  }
+
+  .content h2 {
+    font-size: 1.15rem;
   }
 }
