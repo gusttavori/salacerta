@@ -6,7 +6,9 @@ import { Splash } from "./pages/Splash";
 import { Home } from "./pages/Home";
 import Admin from "./pages/Admin";
 import { Login } from "./pages/Login";
-import { Privacidade } from "./pages/Privacidade"; // Importação adicionada aqui
+import { Privacidade } from "./pages/Privacidade";
+import { Sobre } from "./pages/Sobre";     // Importação da página Sobre
+import { Contato } from "./pages/Contato"; // Importação da página Contato
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
@@ -26,7 +28,12 @@ function App() {
           <Route path="/" element={<Splash />} />
           <Route path="/busca" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          
+          {/* Páginas Institucionais (AdSense & Legal) */}
           <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/sobre" element={<Sobre />} />
+          <Route path="/contato" element={<Contato />} />
+          
           <Route
             path="/admin"
             element={
