@@ -62,11 +62,9 @@ export function Home() {
         return n.includes("morfofuncional") || n.includes("habilidades") || n.includes("práticas") || n.includes("simulação") || n.includes("labt") || n.includes("labcast") || n.includes("map") || n.match(/\bnap\b/) || (n.includes("anatomia") && !n.includes("veterinári")) || n.includes("peças") || n.includes("psicopedagógico") || n.includes("banheiro");
       }
       if (moduloSel === "Módulo 2") {
-        // Professores adicionado aqui. Metodologia removida.
         return n.includes("tutorial") || n.includes("atendimento") || n.includes("professores") || (n.includes("biblioteca") && !n.includes("4"));
       }
       if (moduloSel === "Módulo 3") {
-        // Metodologia mantida aqui. Professores removida.
         if (n.includes("reitoria")) return false; 
         return n.includes("metodologia") || n.includes("informática 03") || n.includes("informática 3") || n.includes("informática iii") || n.includes("convivência") || n.includes("aula") || n.includes("banheiro");
       }
@@ -286,8 +284,8 @@ export function Home() {
         <div className={styles.routeErrorBox}>
           <SearchX size={24} color="#d32f2f" />
           <div>
-            <strong>Trajeto não mapeado</strong>
-            <p>Ainda estamos adicionando rotas para esta sala. Tente outro local!</p>
+            <strong>Trajeto não localizado</strong>
+            <p>Por favor, verifique se selecionou os locais corretamente ou tente uma rota alternativa no campus.</p>
           </div>
         </div>
       )}
@@ -300,11 +298,19 @@ export function Home() {
         {textoBotao}
       </button>
 
+      {/* SEÇÃO DE TEXTO PARA SEO E ADSENSE */}
+      <div className={styles.seoContent}>
+        <h3>O que é o Sala Certa?</h3>
+        <p>
+          O Sala Certa é a principal plataforma digital de navegação universitária, desenvolvida para ajudar estudantes, professores e visitantes a encontrarem rapidamente laboratórios, auditórios, clínicas e salas de aula dentro do campus. Selecione sua localização atual e seu destino para receber instruções passo a passo com imagens detalhadas do trajeto.
+        </p>
+      </div>
+
       <div className={styles.infoBanner}>
         <Info size={24} />
         <div>
-          <strong>Não encontrou sua sala? 🚧</strong>
-          <p>Ainda estamos mapeando o campus! Novas rotas são adicionadas continuamente.</p>
+          <strong>Navegação Inteligente</strong>
+          <p>Encontre rotas acessíveis e os caminhos mais rápidos para sua aula.</p>
         </div>
       </div>
 
@@ -320,8 +326,15 @@ export function Home() {
       )}
 
       <footer className={styles.footerContainer}>
-        <img src={logoFlxche} alt="Flxche" className={styles.footerLogo} />
-        <Link to="/privacidade" className={styles.footerLink}>Privacidade</Link>
+        <img src={logoFlxche} alt="Desenvolvido por Flxche" className={styles.footerLogo} />
+        <div className={styles.footerLinksRow}>
+          <Link to="/sobre" className={styles.footerLink}>Sobre o App</Link>
+          <span className={styles.footerDot}>•</span>
+          <Link to="/privacidade" className={styles.footerLink}>Privacidade</Link>
+          <span className={styles.footerDot}>•</span>
+          <Link to="/contato" className={styles.footerLink}>Contato</Link>
+        </div>
+        <p className={styles.footerCopyright}>© {new Date().getFullYear()} Sala Certa. Todos os direitos reservados.</p>
       </footer>
       
       <InstallPrompt />

@@ -213,7 +213,61 @@
   box-shadow: none;
 }
 
-/* --- BANNER INFORMATIVO (Ajustado para o rodapé do formulário) --- */
+/* ERRO DE ROTA */
+.routeErrorBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fff5f5;
+  border: 1px solid #ffcdd2;
+  padding: 16px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 16px;
+  animation: shake 0.4s ease-in-out;
+}
+
+.routeErrorBox div {
+  display: flex;
+  flex-direction: column;
+}
+
+.routeErrorBox strong {
+  font-size: 0.95rem;
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.routeErrorBox p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #c62828;
+}
+
+/* SEO CONTENT (AdSense) */
+.seoContent {
+  margin-top: 32px;
+  padding: 0 16px;
+  text-align: center;
+  max-width: 500px;
+}
+
+.seoContent h3 {
+  font-size: 1.1rem;
+  color: #111;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.seoContent p {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* BANNER INFORMATIVO */
 .infoBanner {
   display: flex;
   align-items: flex-start;
@@ -222,7 +276,7 @@
   padding: 16px 8px;
   width: 100%;
   max-width: 420px;
-  margin-top: 12px; /* Espaço entre o botão localizar e o banner */
+  margin-top: 12px;
   margin-bottom: 12px;
   box-sizing: border-box;
   animation: fadeIn 0.4s ease-out;
@@ -264,18 +318,19 @@
   border-radius: 12px;
   width: 100%;
   max-width: 420px;
-  margin-top: 12px; /* Margem ajustada para alinhar com o novo layout */
+  margin-top: 12px;
   margin-bottom: 24px;
   font-size: 0.95rem;
   font-weight: 500;
   box-sizing: border-box;
 }
 
+/* FOOTER EXTRA */
 .footerLogo {
   width: 160px;
   opacity: 0.8;
-  margin-top: 60px;
-  padding-bottom: 20px;
+  margin-top: 40px;
+  padding-bottom: 10px;
 }
 
 .footerContainer {
@@ -283,8 +338,26 @@
   flex-direction: column;
   align-items: center;
   padding: 30px 0 20px;
-  gap: 10px;
   margin-top: auto;
+}
+
+.footerLinksRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.footerDot {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+.footerCopyright {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #aaa;
 }
 
 .footerLink {
@@ -312,4 +385,10 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
