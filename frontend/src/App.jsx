@@ -7,8 +7,8 @@ import { Home } from "./pages/Home";
 import Admin from "./pages/Admin";
 import { Login } from "./pages/Login";
 import { Privacidade } from "./pages/Privacidade";
-import { Sobre } from "./pages/Sobre";     // Importação da página Sobre
-import { Contato } from "./pages/Contato"; // Importação da página Contato
+import { Sobre } from "./pages/Institucional/Sobre";
+import { Contato } from "./pages/Institucional/Contato";
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
